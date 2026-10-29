@@ -316,6 +316,37 @@ h3.sec{font-size:.95rem;color:var(--pri-d);border-bottom:1px solid var(--bd);pad
   .card{border:0;padding:0}
   .chip{border:1px solid #999}
 }
+/* Frequência e escalas (versão 2) */
+.fq-tabs{max-width:560px}
+.fq-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:12px;align-items:start}
+.fq-reg{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:22px 16px}
+.fq-relogio span{display:block;font-size:3rem;font-weight:800;line-height:1;color:var(--pri);font-variant-numeric:tabular-nums}
+.fq-relogio small{color:var(--mut)}
+.fq-loc{width:100%;border:1px solid var(--bd);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between;text-align:left;background:#f8faf9}
+.fq-loc b{display:block}.fq-loc small{display:block;color:var(--mut);font-size:.78rem}
+.fq-loc.ok{background:var(--ok2);border-color:#b9dfc3}.fq-loc.ok b{color:var(--ok)}
+.fq-loc.fora{background:var(--warn2);border-color:#f1d49b}.fq-loc.fora b{color:var(--warn)}
+.fq-loc.erro{display:block;background:var(--err2);border-color:#f0c4c0}.fq-loc.erro b{color:var(--err)}
+.fq-pulse{width:14px;height:14px;border-radius:50%;background:var(--pri);flex:none;animation:fqp 1.2s infinite}
+@keyframes fqp{0%{box-shadow:0 0 0 0 rgba(11,110,79,.5)}100%{box-shadow:0 0 0 14px rgba(11,110,79,0)}}
+@media (prefers-reduced-motion:reduce){.fq-pulse{animation:none}}
+.fq-bater{width:100%;max-width:360px;border:0;border-radius:16px;padding:20px;font-size:1.2rem;font-weight:800;color:#fff;background:var(--pri);cursor:pointer;box-shadow:0 6px 18px rgba(11,110,79,.25)}
+.fq-bater.saida{background:#24508f;box-shadow:0 6px 18px rgba(36,80,143,.25)}
+.fq-bater:disabled{opacity:.6;cursor:default}
+.fq-linha{list-style:none;padding:0;margin:8px 0}.fq-linha li{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px dashed var(--bd)}
+.fq-linha li small{flex-basis:100%;color:var(--mut);font-size:.78rem}
+.fq-tp{display:inline-block;font-size:.68rem;font-weight:800;border-radius:5px;padding:1px 6px;color:#fff;background:var(--pri)}.fq-tp.saida{background:#24508f}
+.fq-tab{width:100%;border-collapse:collapse;font-size:.88rem;font-variant-numeric:tabular-nums}
+.fq-tab th,.fq-tab td{padding:8px 10px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+.fq-tab th{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.3px}
+.fq-tab tr.click{cursor:pointer}.fq-tab tr.click:hover{background:#f6f9f8}
+.fq-tab .nw{white-space:nowrap}.fq-rg{margin-bottom:3px}.fq-rg small.d{display:block;margin-left:22px}
+.fq-op{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--bd);border-radius:999px;padding:6px 11px;font-size:.85rem;cursor:pointer;background:#fff}
+.fq-chip{display:inline-block;border-radius:20px;padding:2px 9px;font-size:.72rem;font-weight:700;white-space:nowrap;margin:1px 0}
+.fq-chip.st-ok{background:var(--ok2);color:var(--ok)}.fq-chip.st-warn{background:var(--warn2);color:var(--warn)}.fq-chip.st-err{background:var(--err2);color:var(--err)}.fq-chip.st-info{background:var(--info2);color:var(--info)}
+.esc-frame{display:block;width:100%;height:calc(100vh - 120px);min-height:520px;border:0;border-radius:12px;background:var(--bg)}
+.lembrar{display:flex;gap:8px;align-items:center;font-size:.88rem;margin-top:10px;cursor:pointer}
+@media (max-width:760px){.fq-grid{grid-template-columns:1fr}.fq-relogio span{font-size:2.6rem}}
 </style>
 </head>
 <body>
@@ -704,6 +735,8 @@ const MENU = [
   {id:'CANAL', nome:'Canal de núcleo', perfis:LEITORES},
   {id:'SUPERVISAO', nome:'Feedback da supervisão', perfis:LEITORES},
   {id:'META4', nome:'Meta 4', perfis:null},
+  {id:'frequencia', nome:'Frequência', perfis:null},
+  {id:'escalas', nome:'Escalas', perfis:['residente','preceptor','supervisor','gestor','admin']},
   {id:'painel', nome:'Painel mensal', perfis:GESTAO},
   {id:'usuarios', nome:'Usuários', perfis:['supervisor','admin']}
 ];
@@ -727,7 +760,12 @@ function dataHoraBr(s){ return s ? dataBr(s.slice(0,10)) + (s.length>10 ? ' às 
 function mesBr(m){ if(!m) return 'todos os meses'; const n=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']; const p=m.split('-'); return n[Number(p[1])-1]+' de '+p[0]; }
 function nomeU(id){ const u=S.usuarios.find(x=>x.id===id); return u ? u.nome : ''; }
 function val(id){ const el=document.getElementById(id); return el ? el.value.trim() : ''; }
-function store(k,v){ try{ if(v===undefined) return sessionStorage.getItem(k); if(v===null) sessionStorage.removeItem(k); else sessionStorage.setItem(k,v); }catch(e){ return null; } }
+function store(k,v){ try{
+  if(v===undefined) return sessionStorage.getItem(k) || localStorage.getItem(k);
+  sessionStorage.removeItem(k); localStorage.removeItem(k);
+  if(v!==null) (S.lembrar ? localStorage : sessionStorage).setItem(k,v);
+}catch(e){ return null; } }
+const NO_APP = /PreceptoriaApp/.test(navigator.userAgent);
 function faixaLogos(cls){ return S.logos.length ? '<div class="logos '+(cls||'')+'">'+S.logos.map(l=>'<img src="'+l.src+'" alt="'+esc(l.nome)+'" title="'+esc(l.nome)+'">').join('')+'</div>' : ''; }
 function marca(cls){ const l=S.logos.find(x=>x.chave==='LOGO_RESIDENCIA')||S.logos[0]; return '<div class="logo '+(cls||'')+'">'+(l?'<img src="'+l.src+'" alt="'+esc(l.nome)+'">':'RMSF')+'</div>'; }
 function chip(st){ return '<span class="chip st-'+esc(st)+'">'+esc(STATUS[st]||st)+'</span>'; }
@@ -805,6 +843,7 @@ window.addEventListener('load', ()=>{
 });
 function inicioNormal(){
   const t=store('tk');
+  try{ S.lembrar=!!localStorage.getItem('tk'); }catch(e){}
   if(t){ S.token=t; iniciar(); return; }
   telaLogin();
   rodar('identidade').then(r=>{ S.programa=r.programa||PROGRAMA_PADRAO; S.logos=(r.logos&&r.logos.length)?r.logos:LOGOS_PADRAO; if(!S.token && $('#fLogin')) telaLogin(); }).catch(()=>{});
@@ -817,6 +856,7 @@ function telaLogin(){
    '<p class="mut sm">'+esc(S.programa)+' · Fiocruz / SEMS Dourados-MS</p>'+
    '<div class="fld"><label class="lbl" for="lgU">Usuário</label><input type="text" id="lgU" autocomplete="username" autocapitalize="none"></div>'+
    '<div class="fld"><label class="lbl" for="lgS">Senha</label><input type="password" id="lgS" autocomplete="current-password"></div>'+
+   '<label class="lembrar"><input type="checkbox" id="lgL"'+(NO_APP?' checked':'')+'> Manter conectado neste aparelho</label>'+
    '<div class="erro-m" id="lgE"></div>'+
    '<button type="button" class="btn pri" style="width:100%;margin-top:8px" id="lgB">Entrar</button>'+
    '<p class="mut sm" style="margin-top:14px">Esqueceu a senha? Solicite a redefinição à supervisão de preceptoria.</p><p class="sm" style="margin-top:6px"><a href="#" onclick="telaMeta4Publica();return false">Registrar atividade ou reunião da Meta 4 sem login →</a></p></div></div>';
@@ -829,7 +869,8 @@ async function fazerLogin(){
   const u=val('lgU'), s=$('#lgS').value;
   if(!u||!s){ $('#lgE').textContent='Informe usuário e senha.'; return; }
   $('#lgB').disabled=true; $('#lgE').textContent=''; busy(true);
-  try{ const r=await rodar('login',u,s); S.token=r.token; store('tk',r.token); await iniciar(); }
+  const lembrar=!!($('#lgL')&&$('#lgL').checked);
+  try{ const r=await rodar('login',u,s,lembrar,(NO_APP?'App Android':'Navegador')+' · '+navigator.userAgent.slice(0,90)); S.lembrar=lembrar; S.token=r.token; store('tk',r.token); await iniciar(); }
   catch(err){ const e=$('#lgE'); if(e) e.textContent=msgErro(err); const b=$('#lgB'); if(b) b.disabled=false; }
   finally{ busy(false); }
 }
@@ -882,13 +923,15 @@ async function atualizarSino(){ try{ const l=await call('notificacoes',{},true);
 function view(html){ const v=$('#view'); v.oninput=null; v.onchange=null; v.innerHTML=html; window.scrollTo(0,0); }
 
 function ir(rota, params){
-  if(['inicio','painel','usuarios'].indexOf(rota)>-1 || FORMS[rota]) S.ultimaLista=rota;
+  if(['inicio','painel','usuarios','frequencia','escalas'].indexOf(rota)>-1 || FORMS[rota]) S.ultimaLista=rota;
   S.rota=rota; S.params=params||{};
-  const ativo = rota==='meta4rel' ? 'META4' : FORMS[rota] || ['inicio','painel','usuarios'].indexOf(rota)>-1 ? rota : (S.params.tipo || S.ultimaLista);
+  const ativo = rota==='meta4rel' ? 'META4' : FORMS[rota] || ['inicio','painel','usuarios','frequencia','escalas'].indexOf(rota)>-1 ? rota : (S.params.tipo || S.ultimaLista);
   $$('#tabs button').forEach(b=>b.classList.toggle('on', b.dataset.r===ativo));
   if(rota==='inicio') return vInicio();
   if(rota==='painel') return vPainel();
   if(rota==='usuarios') return vUsuarios();
+  if(rota==='frequencia') return vFrequencia();
+  if(rota==='escalas') return vEscalas();
   if(rota==='meta4rel') return vRelMeta4();
   if(rota==='editar') return vEditar(S.params);
   if(rota==='doc') return vDoc(S.params);
@@ -2100,6 +2143,310 @@ function buildPDF(S, jsPDF){
   return doc;
 }
 
+
+/* ======================= FREQUÊNCIA ELETRÔNICA ======================= */
+const FQ = { aba:'registrar', mes:null, dados:null, painel:null, pos:null, posErro:'', buscando:false, detalhe:null, filtro:'', offset:0 };
+const FQ_NOME_ATIV = {consultorio:'Consultório',acolhimento:'Acolhimento',domiciliar:'Atendimento domiciliar',vigilancia:'Vigilância',gestao:'Gestão local',coletiva:'Atividade coletiva / grupo',canal:'Canal teórico',canal_nucleo:'Canal de núcleo',aula:'Aula',reuniao:'Reunião de equipe',feedback:'Feedback semanal',tcr:'TCR',estendido:'Turno estendido',sombra:'Sombra',interconsulta:'Interconsulta',reun_prec:'Reunião de preceptores',pi:'Preceptoria / PI',revisao:'Revisão de prontuário',fb_sup:'Feedback com a supervisão',vacina:'Sala de vacina',reun_enf:'Reunião de enfermagem',outro:'Outra atividade',intervalo:'Intervalo',ausente:'Fora do horário',vazio:'—'};
+const FQ_EXTERNAS = ['domiciliar','aula','coletiva'];
+const FQ_MOTIVOS = ['Visita / atendimento domiciliar','Atividade no território','Aula ou canal fora da unidade','Reunião externa','GPS impreciso dentro da unidade','Outro'];
+const FQ_SEM = ['ausente','intervalo','vazio'];
+const FQ_DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+function fqGestao(){ return GESTAO.indexOf(S.eu.perfil)>-1; }
+function fqAgora(){ return new Date(Date.now()+FQ.offset); }
+function fqIso(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function fqHoje(){ return fqIso(fqAgora()); }
+function fqHM(q){ return String(q||'').slice(11,16); }
+function fqData(q){ return String(q||'').slice(0,10); }
+function fqMin(q){ const p=String(q).split(/[- :]/).map(Number); return new Date(p[0],p[1]-1,p[2],p[3]||0,p[4]||0,p[5]||0).getTime()/60000; }
+function fqH(min){ const s=min<0?'-':''; min=Math.abs(Math.round(min)); return s+Math.floor(min/60)+'h'+pad(min%60); }
+function fqDist(m){ m=Number(m)||0; return m>=1000 ? (m/1000).toFixed(1).replace('.',',')+' km' : m+' m'; }
+function fqMapa(lat,lng){ return 'https://www.google.com/maps?q='+Number(lat).toFixed(6)+','+Number(lng).toFixed(6); }
+function fqDistM(a,b,c,d){ const R=6371000, r=x=>x*Math.PI/180, h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2; return Math.round(2*R*Math.asin(Math.sqrt(h))); }
+function fqFeriado(iso, feriados){ return (feriados||[]).find(f=>f.data===iso); }
+/** Plano do dia a partir da grade da escala (12 horários 07h–19h x seg–sex). */
+function fqPlano(grade, iso, feriados){
+  const w=new Date(iso+'T12:00:00').getDay(); if(w<1||w>5||!grade) return null;
+  if(fqFeriado(iso,feriados)) return {ini:0,fim:0,h:0,a:[],feriado:fqFeriado(iso,feriados).nome};
+  const a=grade.map(l=>(l[w-1]||{}).a||'vazio'), on=a.map((x,i)=>FQ_SEM.indexOf(x)===-1?i:-1).filter(i=>i>-1);
+  return on.length ? {ini:7+on[0], fim:8+on[on.length-1], h:on.length, a:a} : {ini:0,fim:0,h:0,a:a};
+}
+function fqAtivAgora(grade, feriados){ const d=fqAgora(), pl=fqPlano(grade,fqIso(d),feriados); if(!pl||!pl.a.length) return null; const s=d.getHours()-7; return s>=0&&s<12 ? pl.a[s] : null; }
+function fqDiasMes(mes){ const [a,m]=mes.split('-').map(Number), out=[], h=fqHoje(); for(let d=new Date(a,m-1,1); d.getMonth()===m-1; d.setDate(d.getDate()+1)){ const w=d.getDay(); if(w>0&&w<6&&fqIso(d)<=h) out.push(fqIso(d)); } return out; }
+function fqResumoDia(regsPessoa, grade, iso, cfg, feriados){
+  const pl=fqPlano(grade,iso,feriados), rs=regsPessoa.filter(r=>fqData(r.quando)===iso && r.situacao!=='excluido').sort((a,b)=>a.quando.localeCompare(b.quando)), h=fqHoje();
+  let min=0, aberta=null; const flags=[];
+  const desc=(t0,t1)=>{ let m=0; if(pl&&pl.a) pl.a.forEach((a,i)=>{ if(a!=='intervalo') return; const i0=fqMin(iso+' '+pad(7+i)+':00:00'), i1=i0+60; m+=Math.max(0,Math.min(t1,i1)-Math.max(t0,i0)); }); return m; };
+  rs.forEach(r=>{ if(r.tipo==='entrada'){ if(!aberta) aberta=r; } else if(aberta){ const a=fqMin(aberta.quando), b=fqMin(r.quando); min+=b-a-desc(a,b); aberta=null; } });
+  const prev=pl&&pl.h?pl.h*60:0, ent=rs.find(r=>r.tipo==='entrada'), sai=[...rs].reverse().find(r=>r.tipo==='saida');
+  if(pl&&pl.feriado) flags.push(['info',pl.feriado]);
+  if(prev && !rs.length && iso<h) flags.push(['err','Sem registro']);
+  if(prev && !rs.length && iso===h){ const agMin=fqAgora().getHours()*60+fqAgora().getMinutes(); if(agMin>=pl.fim*60) flags.push(['err','Sem registro']); else if(agMin>pl.ini*60+cfg.tolAtraso) flags.push(['warn','Ainda sem entrada']); }
+  if(ent && prev){ const atr=fqMin(ent.quando)-fqMin(iso+' '+pad(pl.ini)+':00:00'); if(atr>cfg.tolAtraso) flags.push(['warn','Atraso '+Math.round(atr)+' min']); }
+  if(aberta && iso<h) flags.push(['err','Saída não registrada']);
+  const fora=rs.filter(r=>!r.dentro).length; if(fora) flags.push(['warn','Fora do raio ('+fora+')']);
+  if(rs.some(r=>r.origem==='manual')) flags.push(['info','Registro manual']);
+  return {pl, rs, min, prev, ent, sai, aberta, flags};
+}
+function fqResumoMes(regsPessoa, grade, mes, cfg, feriados){
+  const r={dias:0,min:0,prev:0,atrasos:0,semSaida:0,fora:0,faltas:0}; const h=fqHoje();
+  fqDiasMes(mes).forEach(iso=>{ const x=fqResumoDia(regsPessoa,grade,iso,cfg,feriados);
+    if(x.rs.length) r.dias++; r.min+=x.min; if(iso<h) r.prev+=x.prev;
+    x.flags.forEach(f=>{ if(/^Atraso/.test(f[1])) r.atrasos++; if(f[1]==='Saída não registrada') r.semSaida++; if(f[1]==='Sem registro') r.faltas++; });
+    r.fora+=x.rs.filter(z=>!z.dentro).length; });
+  return r;
+}
+function fqSelo(r, cfg){
+  if(r.origem==='manual') return '<span class="fq-chip st-info">Manual</span>';
+  if(!r.dentro) return '<span class="fq-chip st-warn">Fora · '+fqDist(r.distancia)+'</span>';
+  if(r.precisao>cfg.precMax) return '<span class="fq-chip st-warn">GPS ±'+r.precisao+' m</span>';
+  return '<span class="fq-chip st-ok">Na unidade</span>';
+}
+function fqFlags(fs){ return fs.length ? fs.map(f=>'<span class="fq-chip st-'+f[0]+'">'+esc(f[1])+'</span>').join(' ') : '<span class="fq-chip st-ok">Regular</span>'; }
+
+async function vFrequencia(){
+  FQ.mes = FQ.mes || mesAtual();
+  view('<div class="pg-head"><div><h1>Frequência</h1><p class="mut sm">Registro de entrada e saída com localização no momento do registro.</p></div></div>'+
+    '<div class="tabs2 fq-tabs" id="fqTabs"></div><div id="fqBox" style="margin-top:14px"><div class="card vazio">Carregando…</div></div>');
+  fqPintarAbas();
+  await fqCarregar();
+}
+function fqPintarAbas(){
+  const a=[['registrar','Registrar'],['historico','Meu histórico']]; if(fqGestao()) a.push(['painel','Painel'],['config','Configurar']);
+  if(S.eu.perfil==='admin') a.splice(0,2);
+  if(!a.some(x=>x[0]===FQ.aba)) FQ.aba=a[0][0];
+  const t=$('#fqTabs'); if(t) t.innerHTML=a.map(x=>'<button class="'+(x[0]===FQ.aba?'on':'')+'" onclick="fqIr(\''+x[0]+'\')">'+x[1]+'</button>').join('');
+}
+async function fqIr(a){ FQ.aba=a; FQ.detalhe=null; fqPintarAbas(); await fqCarregar(); }
+async function fqCarregar(){
+  try{
+    if(FQ.aba==='registrar' || FQ.aba==='historico'){
+      const r=await call('freqInicio',{mes:FQ.mes});
+      FQ.dados=r; FQ.offset=fqMin(r.agora)*60000-Date.now();
+    } else {
+      const r=await call('freqPainel',{mes:FQ.mes});
+      FQ.painel=r; FQ.dados=FQ.dados||{cfg:r.cfg}; FQ.offset=fqMin(r.agora)*60000-Date.now();
+    }
+  }catch(e){ const b=$('#fqBox'); if(b) b.innerHTML='<div class="card vazio">Não foi possível carregar: '+esc(msgErro(e))+'</div>'; return; }
+  fqRender();
+  if(FQ.aba==='registrar' && !FQ.buscando) fqLerLocal();
+}
+function fqRender(){
+  const b=$('#fqBox'); if(!b || S.rota!=='frequencia') return;
+  if(FQ.aba==='registrar') b.innerHTML=fqTelaRegistrar();
+  else if(FQ.aba==='historico') b.innerHTML=fqTelaHistorico(S.eu, FQ.dados.meus, FQ.dados.grade, false);
+  else if(FQ.aba==='painel') b.innerHTML= FQ.detalhe ? fqTelaDetalhe() : fqTelaPainel();
+  else b.innerHTML=fqTelaConfig();
+}
+
+/* ----- localização ----- */
+function fqPosicao(){
+  return new Promise((ok,falha)=>{
+    if(!navigator.geolocation) return falha(new Error('Este aparelho ou navegador não oferece localização.'));
+    navigator.geolocation.getCurrentPosition(p=>ok({lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy),em:Date.now()}),
+      e=>falha(new Error(e.code===1?'Permissão de localização negada. Libere a localização para a plataforma nas configurações do aparelho.':e.code===3?'O GPS demorou para responder. Vá para perto de uma janela e tente de novo.':'Não foi possível obter a localização.')),
+      {enableHighAccuracy:true, timeout:20000, maximumAge:0});
+  });
+}
+function fqAvaliar(g){ const c=FQ.dados.cfg; if(!c.geo) return Object.assign(g,{dist:null,dentro:false}); const dist=fqDistM(c.geo.lat,c.geo.lng,g.lat,g.lng); return Object.assign(g,{dist:dist, dentro:dist<=c.geo.raio, impreciso:g.acc>c.precMax}); }
+async function fqLerLocal(){
+  FQ.buscando=true; FQ.posErro=''; fqRender();
+  try{ FQ.pos=fqAvaliar(await fqPosicao()); }catch(e){ FQ.pos=null; FQ.posErro=msgErro(e); }
+  FQ.buscando=false; fqRender();
+}
+
+/* ----- registrar ----- */
+function fqProximo(){ const h=fqHoje(), rs=(FQ.dados.meus||[]).filter(r=>fqData(r.quando)===h).sort((a,b)=>a.quando.localeCompare(b.quando)); return rs.length && rs[rs.length-1].tipo==='entrada' ? 'saida':'entrada'; }
+function fqTelaRegistrar(){
+  const d=FQ.dados, c=d.cfg, agora=fqAgora(), iso=fqHoje(), pl=fqPlano(d.grade,iso,d.feriados), tipo=fqProximo(), at=fqAtivAgora(d.grade,d.feriados);
+  const rs=(d.meus||[]).filter(r=>fqData(r.quando)===iso).sort((a,b)=>a.quando.localeCompare(b.quando));
+  let loc;
+  if(!c.geo) loc='<div class="fq-loc erro"><b>Localização da unidade não configurada</b><small>A supervisão precisa definir o ponto da UBS em Frequência › Configurar.</small></div>';
+  else if(FQ.buscando) loc='<div class="fq-loc"><span class="fq-pulse"></span><div><b>Obtendo localização…</b><small>Mantenha esta tela aberta.</small></div></div>';
+  else if(FQ.posErro) loc='<div class="fq-loc erro"><b>Localização indisponível</b><small>'+esc(FQ.posErro)+'</small></div>';
+  else if(FQ.pos) loc='<div class="fq-loc '+(FQ.pos.dentro&&!FQ.pos.impreciso?'ok':'fora')+'"><div><b>'+(FQ.pos.dentro?(FQ.pos.impreciso?'Dentro do raio, GPS impreciso':'Você está na unidade'):'Fora do raio da unidade')+'</b><small>'+fqDist(FQ.pos.dist)+' de '+esc(c.unidade)+' · precisão ±'+FQ.pos.acc+' m</small></div><a href="'+fqMapa(FQ.pos.lat,FQ.pos.lng)+'" target="_blank" rel="noopener" class="sm">Ver no mapa</a></div>';
+  else loc='<div class="fq-loc"><b>Localização ainda não lida</b></div>';
+  return '<div class="fq-grid"><div class="card fq-reg">'+
+    '<div class="fq-relogio"><span id="fqHora">'+pad(agora.getHours())+':'+pad(agora.getMinutes())+'</span><small>'+FQ_DIAS[agora.getDay()]+', '+dataBr(iso)+'</small></div>'+loc+
+    '<button class="fq-bater '+tipo+'" id="fqBt" onclick="fqRegistrar()"'+(FQ.buscando||!c.geo?' disabled':'')+'>Registrar '+(tipo==='entrada'?'entrada':'saída')+'</button>'+
+    '<button class="btn" onclick="fqLerLocal()"'+(FQ.buscando?' disabled':'')+'>Atualizar localização</button></div>'+
+    '<div class="card"><h2 style="margin-top:0">Hoje</h2>'+
+    (pl&&pl.feriado?'<p class="sm">Feriado: <b>'+esc(pl.feriado)+'</b></p>':pl&&pl.h?'<p class="sm">Previsto na escala: <b>'+pad(pl.ini)+':00 às '+pad(pl.fim)+':00</b> ('+pl.h+'h de atividade)'+(at?'<br>Agora: <b>'+esc(FQ_NOME_ATIV[at]||at)+'</b>':'')+'</p>':'<p class="mut sm">'+(d.grade?'Sem atividade prevista na escala para hoje.':'Sua escala ainda não foi cadastrada na plataforma.')+'</p>')+
+    (rs.length?'<ul class="fq-linha">'+rs.map(r=>'<li><span class="fq-tp '+r.tipo+'">'+(r.tipo==='entrada'?'Entrada':'Saída')+'</span><b>'+fqHM(r.quando)+'</b>'+fqSelo(r,c)+(r.justificativa?'<small>'+esc(r.justificativa)+'</small>':'')+'</li>').join('')+'</ul>':'<p class="mut sm">Nenhum registro hoje.</p>')+
+    '<p class="mut sm" style="margin-bottom:0">O horário registrado é o do servidor da plataforma. A localização é lida só no momento do registro.</p></div></div>';
+}
+async function fqRegistrar(just){
+  if(!FQ.dados.termo) return fqTermo();
+  const bt=$('#fqBt'); if(bt) bt.disabled=true;
+  let g;
+  try{ FQ.buscando=true; fqRender(); g=fqAvaliar(await fqPosicao()); FQ.pos=g; }
+  catch(e){ FQ.buscando=false; FQ.posErro=msgErro(e); fqRender(); toast(msgErro(e),'err'); return; }
+  FQ.buscando=false; fqRender();
+  if((!g.dentro || g.impreciso) && just===undefined){
+    if(!g.dentro && FQ.dados.cfg.regraFora==='bloquear'){ abrirModal('<h2>Registro não permitido</h2><p>Você está a <b>'+fqDist(g.dist)+'</b> da unidade e a regra atual bloqueia registros fora do raio de '+FQ.dados.cfg.geo.raio+' m.</p><p class="mut sm">Em atividade externa, peça à supervisão um registro manual.</p><div class="m-acoes"><button class="btn pri" onclick="fecharModal()">Entendi</button></div>'); return; }
+    return fqJustificar(g);
+  }
+  try{
+    const r=await call('freqRegistrar',{lat:g.lat,lng:g.lng,precisao:g.acc,justificativa:just||'',dispositivo:navigator.userAgent.slice(0,110)},true);
+    FQ.dados.meus.push(r); fecharModal(); fqRender();
+    toast((r.tipo==='entrada'?'Entrada':'Saída')+' registrada às '+fqHM(r.quando)+(r.dentro?'':' (fora do raio)'),'ok');
+  }catch(e){
+    const m=msgErro(e);
+    if(m==='TERMO') return fqTermo();
+    if(m==='JUSTIFICAR') return fqJustificar(g);
+    toast(m,'err');
+  }
+}
+function fqJustificar(g){
+  const at=fqAtivAgora(FQ.dados.grade,FQ.dados.feriados), ext=at&&FQ_EXTERNAS.indexOf(at)>-1;
+  let sel=!g.dentro ? (at==='domiciliar'?FQ_MOTIVOS[0]:ext?FQ_MOTIVOS[1]:'') : FQ_MOTIVOS[4];
+  abrirModal('<h2>'+(g.dentro?'Precisão do GPS baixa':'Você está fora do raio da unidade')+'</h2>'+
+    '<p class="sm">Distância: <b>'+fqDist(g.dist)+'</b> · precisão ±'+g.acc+' m · raio permitido '+FQ.dados.cfg.geo.raio+' m.</p>'+
+    (at?'<p class="sm">Atividade prevista na sua escala agora: <b>'+esc(FQ_NOME_ATIV[at]||at)+'</b>'+(ext?' (registro externo esperado).':'.')+'</p>':'')+
+    '<div class="fld"><span class="lbl">Motivo <span class="req">*</span></span><div class="chips" id="fqMot">'+FQ_MOTIVOS.map(m=>'<button type="button" class="chip-bt'+(m===sel?' on':'')+'" data-m="'+esc(m)+'">'+esc(m)+'</button>').join('')+'</div></div>'+
+    '<div class="fld"><label class="lbl" for="fqJ">Detalhe <span class="mut" id="fqJo">(opcional)</span></label><input type="text" id="fqJ" maxlength="200" placeholder="Ex.: VD família Silva, microárea 4"></div>'+
+    '<div class="m-acoes"><button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="fqJok">Registrar com justificativa</button></div>');
+  const obr=()=>{ $('#fqJo').textContent= sel==='Outro'?'(obrigatório)':'(opcional)'; };
+  $$('#fqMot .chip-bt').forEach(b=>b.onclick=()=>{ sel=b.dataset.m; $$('#fqMot .chip-bt').forEach(x=>x.classList.toggle('on',x===b)); obr(); }); obr();
+  $('#fqJok').onclick=async()=>{ const t=$('#fqJ').value.trim(); if(!sel) return toast('Escolha o motivo.','err'); if(sel==='Outro'&&!t) return toast('Descreva o motivo.','err');
+    $('#fqJok').disabled=true; fecharModal(); await fqRegistrar(sel+(t?' — '+t:'')); };
+}
+function fqTermo(){
+  abrirModal('<h2>Termo de ciência — uso da localização</h2>'+
+    '<p class="sm">Ao registrar entrada e saída na plataforma, a sua localização é capturada <b>somente no momento do registro</b>, nunca de forma contínua.</p>'+
+    '<ul class="sm"><li>Finalidade: comprovar a frequência na unidade e nas atividades do território do '+esc(S.programa)+'.</li>'+
+    '<li>Quem vê o local exato: supervisão de preceptoria, gestão da unidade e administração da plataforma.</li>'+
+    '<li>O registro não substitui o ponto oficial dos servidores, salvo definição da SEMS.</li>'+
+    '<li>Você pode consultar todos os seus registros em “Meu histórico”.</li></ul>'+
+    '<div class="m-acoes"><button class="btn" onclick="fecharModal()">Agora não</button><button class="btn pri" id="fqTok">Li e concordo</button></div>');
+  $('#fqTok').onclick=async()=>{ try{ FQ.dados.termo=await call('freqTermo',{}); fecharModal(); fqRegistrar(); }catch(e){} };
+}
+
+/* ----- histórico ----- */
+function fqTelaHistorico(p, regs, grade, gestao){
+  const cfg=(FQ.painel&&gestao?FQ.painel.cfg:FQ.dados.cfg), fer=(gestao?FQ.painel.feriados:FQ.dados.feriados);
+  const R=fqResumoMes(regs,grade,FQ.mes,cfg,fer), dias=fqDiasMes(FQ.mes).reverse(), saldo=R.min-R.prev;
+  return '<div class="ul" style="margin-bottom:10px"><div>'+(gestao?'<button class="btn sm" onclick="FQ.detalhe=null;fqRender()">← Voltar ao painel</button><h2>'+esc(p.nome)+'</h2><p class="mut sm" style="margin:0">'+esc(PERFIL_NOME[p.perfil]||'')+(p.categoria?' · '+esc(p.categoria):'')+(p.ano?' · '+esc(p.ano):'')+'</p>':'')+'</div>'+
+    '<div class="bts"><input type="month" value="'+FQ.mes+'" onchange="FQ.mes=this.value||FQ.mes;fqCarregar()">'+(gestao?'<button class="btn sm pri" onclick="fqManual(\''+p.id+'\')">Registro manual</button>':'')+'</div></div>'+
+    (grade?'':'<div class="alerta">'+(gestao?'Esta pessoa':'Você')+' ainda não tem escala cadastrada: as horas previstas ficam zeradas.</div>')+
+    '<div class="grid g4"><div class="kpi"><span>Horas registradas</span><b>'+fqH(R.min)+'</b></div><div class="kpi"><span>Previstas (dias encerrados)</span><b>'+fqH(R.prev)+'</b></div>'+
+    '<div class="kpi"><span>Saldo</span><b style="color:'+(saldo<-60?'var(--err)':saldo>60?'var(--ok)':'inherit')+'">'+fqH(saldo)+'</b></div><div class="kpi"><span>Pendências</span><b>'+(R.faltas+R.semSaida)+'</b><small class="mut">'+R.faltas+' sem registro · '+R.semSaida+' sem saída</small></div></div>'+
+    '<div class="card" style="padding:0;margin-top:12px"><div class="tab-wrap"><table class="fq-tab"><thead><tr><th>Dia</th><th>Previsto</th><th>Registros</th><th>Horas</th><th>Situação</th></tr></thead><tbody>'+
+    (dias.length?dias.map(iso=>{ const x=fqResumoDia(regs,grade,iso,cfg,fer), w=new Date(iso+'T12:00:00').getDay();
+      return '<tr><td class="nw"><b>'+dataBr(iso).slice(0,5)+'</b> <small class="mut">'+FQ_DIAS[w].slice(0,3)+'</small></td>'+
+        '<td class="nw">'+(x.pl&&x.pl.h?pad(x.pl.ini)+'h–'+pad(x.pl.fim)+'h <small class="mut">('+x.pl.h+'h)</small>':'<span class="mut">—</span>')+'</td><td>'+
+        (x.rs.length?x.rs.map(r=>'<div class="fq-rg"><span class="fq-tp '+r.tipo+'">'+(r.tipo==='entrada'?'E':'S')+'</span> '+fqHM(r.quando)+' '+fqSelo(r,cfg)+
+          (gestao&&r.origem!=='manual'&&r.lat?' <a class="sm" href="'+fqMapa(r.lat,r.lng)+'" target="_blank" rel="noopener">mapa</a>':'')+
+          (gestao?' <button class="x" title="Excluir registro" onclick="fqExcluir(\''+r.id+'\')">×</button>':'')+
+          (r.justificativa?'<small class="mut d">'+esc(r.justificativa)+(r.origem==='manual'&&r.registrado_por?' · por '+esc(nomeU(r.registrado_por)||'supervisão'):'')+'</small>':'')+'</div>').join(''):'<span class="mut">—</span>')+
+        '</td><td class="nw">'+(x.min?fqH(x.min):'—')+'</td><td>'+fqFlags(x.flags)+'</td></tr>'; }).join(''):'<tr><td colspan="5" class="mut">Sem dias úteis neste mês até hoje.</td></tr>')+
+    '</tbody></table></div></div>';
+}
+
+/* ----- painel ----- */
+function fqRegsDe(id){ return FQ.painel.registros.filter(r=>r.usuario_id===id); }
+function fqTelaPainel(){
+  const P=FQ.painel, iso=fqHoje(), lista=P.pessoas.filter(p=>!FQ.filtro || p.perfil===FQ.filtro);
+  const hoje=lista.map(p=>({p, x:fqResumoDia(fqRegsDe(p.id),P.grades[p.id],iso,P.cfg,P.feriados)}));
+  const presentes=hoje.filter(o=>o.x.aberta).length, semEnt=hoje.filter(o=>o.x.flags.some(f=>f[1]==='Ainda sem entrada')).length, fora=hoje.filter(o=>o.x.rs.some(r=>!r.dentro)).length;
+  const comPrev=hoje.filter(o=>o.x.prev).length, registraram=hoje.filter(o=>o.x.rs.length).length;
+  const semEscala=P.pessoas.filter(p=>!P.grades[p.id]).length;
+  const linhaHoje=o=>{ const x=o.x; return '<tr class="click" onclick="fqVer(\''+o.p.id+'\')"><td><b>'+esc(o.p.nome)+'</b><br><small class="mut">'+esc(o.p.categoria||PERFIL_NOME[o.p.perfil]||'')+(o.p.ano?' · '+esc(o.p.ano):'')+'</small></td>'+
+    '<td class="nw">'+(x.pl&&x.pl.h?pad(x.pl.ini)+'h–'+pad(x.pl.fim)+'h':'—')+'</td><td class="nw">'+(x.ent?fqHM(x.ent.quando)+' '+fqSelo(x.ent,P.cfg):'—')+'</td>'+
+    '<td class="nw">'+(x.aberta?'<span class="fq-chip st-ok">Em atividade</span>':x.sai?fqHM(x.sai.quando):'—')+'</td><td>'+fqFlags(x.flags)+'</td></tr>'; };
+  return '<div class="ul" style="margin-bottom:10px"><p class="mut sm" style="margin:0">'+esc(P.unidade)+' · atualizado às '+fqHM(P.agora)+'</p>'+
+    '<div class="bts"><select onchange="FQ.filtro=this.value;fqRender()"><option value="">Todos</option>'+['residente','preceptor','supervisor','gestor','colaborador'].map(t=>'<option value="'+t+'"'+(FQ.filtro===t?' selected':'')+'>'+esc(PERFIL_NOME[t])+'</option>').join('')+'</select><button class="btn sm" onclick="fqCarregar()">Atualizar</button></div></div>'+
+    (semEscala?'<div class="alerta">'+semEscala+' pessoa(s) sem escala cadastrada: para elas, a plataforma não calcula horas previstas nem atrasos.</div>':'')+
+    '<div class="grid g4"><div class="kpi"><span>Em atividade agora</span><b>'+presentes+'</b></div><div class="kpi"><span>Esperados sem entrada</span><b style="color:'+(semEnt?'var(--warn)':'inherit')+'">'+semEnt+'</b></div>'+
+    '<div class="kpi"><span>Fora do raio hoje</span><b>'+fora+'</b></div><div class="kpi"><span>Registraram hoje</span><b>'+registraram+' de '+comPrev+'</b><small class="mut">com atividade prevista</small></div></div>'+
+    '<h3 class="sec-t">Hoje</h3><div class="card" style="padding:0"><div class="tab-wrap"><table class="fq-tab"><thead><tr><th>Pessoa</th><th>Previsto</th><th>Entrada</th><th>Saída</th><th>Situação</th></tr></thead><tbody>'+
+    (hoje.filter(o=>o.x.prev||o.x.rs.length).sort((a,b)=>(b.x.flags.length-a.x.flags.length)||a.p.nome.localeCompare(b.p.nome)).map(linhaHoje).join('')||'<tr><td colspan="5" class="mut">Ninguém com atividade prevista ou registro hoje.</td></tr>')+'</tbody></table></div></div>'+
+    '<div class="ul"><h3 class="sec-t">Consolidado do mês</h3><div class="bts"><input type="month" value="'+FQ.mes+'" onchange="FQ.mes=this.value||FQ.mes;fqCarregar()"><button class="btn sm" onclick="fqCSV()">Exportar planilha (CSV)</button></div></div>'+
+    '<div class="card" style="padding:0"><div class="tab-wrap"><table class="fq-tab"><thead><tr><th>Pessoa</th><th>Dias</th><th>Horas</th><th>Previstas</th><th>Cumprido</th><th>Atrasos</th><th>Sem saída</th><th>Sem registro</th><th>Fora do raio</th></tr></thead><tbody>'+
+    lista.map(p=>{ const r=fqResumoMes(fqRegsDe(p.id),P.grades[p.id],FQ.mes,P.cfg,P.feriados), pc=r.prev?Math.round(100*r.min/r.prev):0;
+      return '<tr class="click" onclick="fqVer(\''+p.id+'\')"><td><b>'+esc(p.nome.split(' ')[0])+'</b> <small class="mut">'+esc(p.categoria||'')+'</small></td><td>'+r.dias+'</td><td class="nw">'+fqH(r.min)+'</td><td class="nw">'+(P.grades[p.id]?fqH(r.prev):'<span class="mut">sem escala</span>')+'</td>'+
+        '<td>'+(r.prev?barra(Math.min(pc,100))+'<small>'+pc+'%</small>':'—')+'</td><td>'+(r.atrasos||'–')+'</td><td style="color:'+(r.semSaida?'var(--err)':'inherit')+'">'+(r.semSaida||'–')+'</td><td style="color:'+(r.faltas?'var(--err)':'inherit')+'">'+(r.faltas||'–')+'</td><td>'+(r.fora||'–')+'</td></tr>'; }).join('')+
+    '</tbody></table></div></div><p class="mut sm">As horas registradas descontam o intervalo previsto na escala. Previstas = horas da escala nos dias úteis já encerrados, sem feriados. Toque em uma pessoa para ver o detalhe, o mapa de cada registro e lançar registro manual.</p>';
+}
+function fqVer(id){ FQ.detalhe=id; fqRender(); window.scrollTo(0,0); }
+function fqTelaDetalhe(){ const p=FQ.painel.pessoas.find(x=>x.id===FQ.detalhe); if(!p){ FQ.detalhe=null; return fqTelaPainel(); } return fqTelaHistorico(p, fqRegsDe(p.id), FQ.painel.grades[p.id], true); }
+function fqManual(pid){
+  const p=FQ.painel.pessoas.find(x=>x.id===pid);
+  abrirModal('<h2>Registro manual</h2><p class="mut sm">'+esc(p.nome)+' · para esquecimentos ou falta de celular. Fica identificado como manual, com o seu nome.</p>'+
+    '<div class="row2"><div class="fld"><label class="lbl" for="mqD">Data</label><input type="date" id="mqD" value="'+fqHoje()+'" max="'+fqHoje()+'"></div><div class="fld"><label class="lbl" for="mqH">Hora</label><input type="time" id="mqH" value="'+pad(fqAgora().getHours())+':'+pad(fqAgora().getMinutes())+'"></div></div>'+
+    '<div class="fld"><span class="lbl">Tipo</span><div class="chips" id="mqT"><button type="button" class="chip-bt on" data-t="entrada">Entrada</button><button type="button" class="chip-bt" data-t="saida">Saída</button></div></div>'+
+    '<div class="fld"><label class="lbl" for="mqM">Motivo <span class="req">*</span></label><input type="text" id="mqM" maxlength="200" placeholder="Ex.: esqueceu de registrar a saída; confirmado com a preceptora"></div>'+
+    '<div class="m-acoes"><button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="mqOk">Salvar registro</button></div>');
+  let tipo='entrada';
+  $$('#mqT .chip-bt').forEach(b=>b.onclick=()=>{ tipo=b.dataset.t; $$('#mqT .chip-bt').forEach(x=>x.classList.toggle('on',x===b)); });
+  $('#mqOk').onclick=async()=>{ try{ const r=await call('freqManual',{usuario_id:pid,data:val('mqD'),hora:val('mqH'),tipo:tipo,motivo:val('mqM')});
+    if(r.quando.slice(0,7)===FQ.mes) FQ.painel.registros.push(r); fecharModal(); fqRender(); toast('Registro manual salvo.','ok'); }catch(e){} };
+}
+function fqExcluir(id){
+  abrirModal('<h2>Excluir registro</h2><p class="sm">O registro deixa de contar na frequência, mas fica guardado na planilha com o motivo e o seu nome (auditoria).</p>'+
+    '<div class="fld"><label class="lbl" for="exM">Motivo <span class="req">*</span></label><input type="text" id="exM" maxlength="200" placeholder="Ex.: registro duplicado"></div>'+
+    '<div class="m-acoes"><button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn dng" id="exOk">Excluir</button></div>');
+  $('#exOk').onclick=async()=>{ try{ await call('freqExcluir',{id:id,motivo:val('exM')}); const r=FQ.painel.registros.find(x=>x.id===id); if(r) r.situacao='excluido'; fecharModal(); fqRender(); toast('Registro excluído.','ok'); }catch(e){} };
+}
+function fqCSV(){
+  const P=FQ.painel, nome=id=>(P.pessoas.find(p=>p.id===id)||{}).nome||'';
+  const L=[['Data','Hora','Pessoa','Perfil','Categoria','Tipo','Situação','Dentro do raio','Distância (m)','Precisão (m)','Latitude','Longitude','Justificativa','Origem','Observação']];
+  P.registros.slice().sort((a,b)=>a.quando.localeCompare(b.quando)).forEach(r=>{ const p=P.pessoas.find(x=>x.id===r.usuario_id)||{};
+    L.push([dataBr(fqData(r.quando)),fqHM(r.quando),nome(r.usuario_id),PERFIL_NOME[p.perfil]||'',p.categoria||'',r.tipo==='entrada'?'Entrada':'Saída',r.situacao==='excluido'?'Excluído':'Válido',r.dentro?'Sim':'Não',r.distancia,r.precisao,r.lat||'',r.lng||'',r.justificativa,r.origem,r.obs]); });
+  const csv='﻿'+L.map(l=>l.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='frequencia-'+FQ.mes+'.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ----- configurar ----- */
+function fqTelaConfig(){
+  const c=FQ.painel.cfg, g=c.geo||{lat:'',lng:'',raio:150};
+  return '<div class="card"><h2 style="margin-top:0">Ponto da unidade e cerca virtual</h2><p class="mut sm">'+esc(c.unidade)+'</p>'+
+    '<div class="row2"><div class="fld"><label class="lbl" for="cfLat">Latitude</label><input type="text" inputmode="decimal" id="cfLat" value="'+g.lat+'"></div><div class="fld"><label class="lbl" for="cfLng">Longitude</label><input type="text" inputmode="decimal" id="cfLng" value="'+g.lng+'"></div></div>'+
+    '<div class="bts"><button class="btn sm" onclick="fqUsarPos()">Usar minha localização atual</button>'+(c.geo?'<a class="sm" href="'+fqMapa(g.lat,g.lng)+'" target="_blank" rel="noopener">Conferir ponto no mapa</a>':'')+'</div>'+
+    '<p class="mut sm">Faça a leitura de dentro da UBS, no centro do prédio, e salve.</p>'+
+    '<div class="row2"><div class="fld"><label class="lbl" for="cfRaio">Raio permitido (m)</label><input type="number" id="cfRaio" min="20" max="5000" value="'+g.raio+'"><small class="mut">Recomendado: 100 a 200 m. Em ambiente fechado o GPS pode errar dezenas de metros.</small></div>'+
+    '<div class="fld"><label class="lbl" for="cfPrec">Precisão máxima aceita (m)</label><input type="number" id="cfPrec" min="10" value="'+c.precMax+'"><small class="mut">Leituras piores pedem justificativa.</small></div></div>'+
+    '<div class="row2"><div class="fld"><label class="lbl" for="cfTol">Tolerância de atraso (min)</label><input type="number" id="cfTol" min="0" value="'+c.tolAtraso+'"></div>'+
+    '<div class="fld"><span class="lbl">Registro fora do raio</span><div class="chips"><label class="fq-op"><input type="radio" name="cfFora" value="justificar"'+(c.regraFora!=='bloquear'?' checked':'')+'> Aceitar com justificativa</label><label class="fq-op"><input type="radio" name="cfFora" value="bloquear"'+(c.regraFora==='bloquear'?' checked':'')+'> Bloquear</label></div></div></div>'+
+    '<div class="m-acoes"><button class="btn pri" onclick="fqSalvarCfg()">Salvar configurações</button></div></div>';
+}
+async function fqUsarPos(){ try{ toast('Obtendo localização…'); const g=await fqPosicao(); $('#cfLat').value=g.lat.toFixed(7); $('#cfLng').value=g.lng.toFixed(7); toast('Ponto lido com precisão de ±'+g.acc+' m. Confira e salve.','ok'); }catch(e){ toast(msgErro(e),'err'); } }
+async function fqSalvarCfg(){
+  const n=id=>Number(String(val(id)).replace(',','.'));
+  try{ const c=await call('freqConfig',{lat:n('cfLat'),lng:n('cfLng'),raio:n('cfRaio'),precMax:n('cfPrec'),tolAtraso:n('cfTol'),regraFora:($('input[name=cfFora]:checked')||{}).value});
+    FQ.painel.cfg=c; if(FQ.dados) FQ.dados.cfg=c; FQ.pos=null; fqRender(); toast('Configurações salvas.','ok'); }catch(e){}
+}
+setInterval(()=>{ const h=document.getElementById('fqHora'); if(h){ const d=fqAgora(); h.textContent=pad(d.getHours())+':'+pad(d.getMinutes()); } }, 15000);
+
+/* ======================= ESCALAS (módulo em quadro próprio) ======================= */
+window.ESC = {};
+function escVazia(){ return Array.from({length:12},()=>Array.from({length:5},()=>({a:'vazio',d:''}))); }
+async function vEscalas(){
+  view('<div id="escBox"><div class="card vazio">Carregando escalas…</div></div>');
+  let r;
+  try{ r=await call('escalas',{}); }catch(e){ const b=$('#escBox'); if(b) b.innerHTML='<div class="card vazio">Não foi possível carregar: '+esc(msgErro(e))+'</div>'; return; }
+  if(S.rota!=='escalas') return;
+  const usados={};
+  const pessoas=r.pessoas.map(p=>{
+    const partes=p.nome.split(' '); let c=partes[0]; if(usados[c]) c=partes[0]+' '+(partes[partes.length-1]||''); usados[c]=1;
+    return {id:p.id, tipo:p.perfil, nome:p.nome, curto:c, categoria:p.categoria||'', ano:p.ano||'', equipe:p.equipe||'', preceptor:p.preceptor_id||'',
+      grade:p.grade||escVazia(), semCadastro:!p.grade, atualizado:p.atualizado||''};
+  });
+  ESC.dados={pessoas:pessoas, escuta:r.escuta||[], eventos:r.eventos||[]};
+  ESC.param=r.param; ESC.feriados=r.feriados||[]; ESC.unidade=r.unidade;
+  ESC.eu={id:S.eu.id, nome:S.eu.nome, perfil:S.eu.perfil};
+  $('#escBox').innerHTML='<iframe id="escFrame" class="esc-frame" title="Escalas"></iframe>';
+  $('#escFrame').srcdoc=ESC_MOD;
+}
+window.escSalvarGrade=(id,grade)=>call('escalaSalvar',{usuario_id:id, grade:grade}, true);
+window.escSalvarCalendario=(feriados,eventos)=>call('escalaCalendario',{feriados:feriados, eventos:eventos}, true);
+window.escSalvarParam=param=>call('escalaParam',{param:param}, true);
+window.escPronto=w=>{
+  // no app Android, a impressão do quadro é feita pelo próprio app
+  if(window.AndroidApp && AndroidApp.imprimirHtml) w.print=()=>AndroidApp.imprimirHtml('<!DOCTYPE html>'+w.document.documentElement.outerHTML, 'Escalas');
+};
+
+const ESC_MOD = "<!DOCTYPE html>\n<html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Escalas<\/title>\n<style>\n:root{--bg:#f3f6f5;--card:#fff;--tx:#1b2a28;--mut:#5d6e6b;--bd:#d9e3e0;--pri:#0b6e4f;--pri-d:#08573e;--pri2:#e2f1ea;--ok:#1f7a3d;--ok2:#e1f3e5;--warn:#a86400;--warn2:#fff2d9;--err:#b3261e;--err2:#fde8e6}\n*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif}\nbutton,input,select{font:inherit;color:inherit}\n.top{position:sticky;top:0;z-index:20;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;flex-wrap:wrap}\n.brand{display:flex;gap:10px;align-items:center}.brand img{height:38px;width:38px;object-fit:contain;background:#fff;border-radius:9px}\n.brand b{display:block}.brand small{opacity:.85;font-size:.75rem}\n.como{display:flex;gap:6px;align-items:center;font-size:.82rem}.como select{border:0;border-radius:8px;padding:7px 9px;color:var(--tx);max-width:60vw}\n.tabs{background:#fff;border-bottom:1px solid var(--bd);display:flex;overflow-x:auto;padding:0 10px;position:sticky;top:0;z-index:19}\n.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:11px 12px;white-space:nowrap;cursor:pointer;color:var(--mut);font-weight:600;font-size:.9rem}\n.tabs button.on{color:var(--pri);border-bottom-color:var(--pri)}\nmain{max-width:1180px;margin:0 auto;padding:18px 14px 60px}\nh1{font-size:1.3rem;margin:0}h2{font-size:1.1rem}\n.mut{color:var(--mut)}.sm{font-size:.85rem}.hidden{display:none!important}\n.card{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}\n.pg-head{margin-bottom:12px}.pg-head p{margin:.2rem 0 0}\n.ul{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}\n.bts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.bts input{border:1px solid var(--bd);border-radius:8px;padding:5px 8px}\n.btn{border:1px solid var(--bd);background:#fff;border-radius:9px;padding:9px 14px;cursor:pointer;font-weight:600}\n.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}.btn.sm{padding:6px 10px;font-size:.84rem}.btn.dng{color:var(--err);border-color:#f0c4c0}\n.chip{display:inline-block;border-radius:20px;padding:2px 10px;font-size:.75rem;font-weight:700}\n.st-ok{background:var(--ok2);color:var(--ok)}.st-warn{background:var(--warn2);color:var(--warn)}.st-err{background:var(--err2);color:var(--err)}\n.grid{display:grid;gap:10px}.g4{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}\n.kpi{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px}.kpi span{display:block;color:var(--mut);font-size:.8rem}.kpi b{font-size:1.5rem}\n.sec-t{font-size:.9rem;margin:18px 0 8px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}\n.tab-wrap{overflow-x:auto}\ntable.grade{border-collapse:collapse;width:100%;min-width:640px;font-size:.78rem;table-layout:fixed;margin-bottom:8px}\ntable.grade th,table.grade td{border:1px solid #cfd8d5;padding:4px 5px;vertical-align:top}\ntable.grade thead th{background:#24508f;color:#fff;font-weight:700;text-align:center}\ntable.grade tbody th{width:74px;background:#eef3f8;font-weight:600;white-space:nowrap}\ntable.grade td b{display:block;font-weight:600;line-height:1.2}table.grade td small{display:block;color:#3d4b48;line-height:1.2;margin-top:2px}\ntable.grade td.ed{cursor:pointer}table.grade td.ed:hover{outline:2px solid var(--pri);outline-offset:-2px}\ntable.grade td.aus b{color:#9aa6a3;font-weight:400}\ntable.grade tr.tot td{text-align:center;font-weight:700;background:#f6f9f8}\ntable.mes thead th.fer{background:#b3261e}table.mes td.fer{background:#fde8e6;color:var(--err);text-align:center;font-weight:700}\ntable.mes .fora{background:#f4f4f4;color:#bbb}table.mes small.ev{color:#7a2e00;font-weight:600}\n.leg{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.75rem;color:var(--mut);margin-top:6px}.leg i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid #ccc;margin-right:4px;vertical-align:middle}\nul.chk{list-style:none;padding:0;margin:8px 0 0;font-size:.88rem}ul.chk li{padding:4px 0;border-bottom:1px dashed var(--bd)}\nul.chk li.erro{color:var(--err)}ul.chk li.aviso{color:var(--warn)}\ntable.lst{width:100%;border-collapse:collapse;font-size:.9rem}table.lst th,table.lst td{padding:9px 12px;border-bottom:1px solid var(--bd);text-align:left}\ntable.lst.rec td,table.lst.rec th{padding:6px 10px}tr.fora-rec td{background:#fff8eb}\ntable.lst th{font-size:.75rem;color:var(--mut);text-transform:uppercase}table.lst tr.click{cursor:pointer}table.lst tr.click:hover{background:#f6f9f8}\ntable.onde{border-collapse:collapse;font-size:.72rem;min-width:600px;width:100%}\ntable.onde th,table.onde td{border:1px solid #d5dedb;padding:4px;text-align:center;white-space:nowrap}\ntable.onde thead th{background:#24508f;color:#fff}table.onde tbody th{background:#eef3f8;text-align:left}\ntable.onde td.cob{font-weight:800;background:#fff}table.onde td.cob.zero{background:var(--err2);color:var(--err)}\n.filtros{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.filtros label{font-size:.8rem;color:var(--mut);display:flex;flex-direction:column;gap:3px}\n.filtros select,.filtros input{border:1px solid var(--bd);border-radius:9px;padding:8px 10px;background:#fff;min-width:180px}\n.chips{display:flex;flex-wrap:wrap;gap:6px}\n.chip-bt{border:1px solid var(--bd);background:#f6f9f8;border-radius:999px;padding:6px 11px;font-size:.82rem;cursor:pointer}\n.chip-bt.on{background:var(--pri);border-color:var(--pri);color:#fff}\nlabel.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--bd);background:#fff;border-radius:999px;padding:5px 10px;font-size:.84rem;font-weight:500;cursor:pointer}\nlabel.chip:has(input:checked){border-color:var(--pri);background:var(--pri2)}\n.fld{margin:12px 0}.lbl{display:block;font-weight:600;font-size:.86rem;margin-bottom:5px}\n.fld input[type=text],.fld select{width:100%;border:1px solid var(--bd);border-radius:9px;padding:9px 11px}\n.row3{display:grid;grid-template-columns:150px 1fr auto;gap:8px;margin-top:8px}.row3 input,.row3 select{border:1px solid var(--bd);border-radius:9px;padding:8px}\n.x{border:0;background:none;color:var(--err);cursor:pointer;font-size:1rem}\n.prm{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--bd);font-size:.9rem}.prm input{width:80px;border:1px solid var(--bd);border-radius:8px;padding:6px}\n.obs{background:#f6f9f8;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:.85rem}.obs ul{margin:4px 0 0;padding-left:18px}\n.vazio{text-align:center;color:var(--mut);padding:24px}\n.modal{position:fixed;inset:0;background:rgba(10,25,20,.45);display:grid;place-items:center;z-index:50;padding:14px}\n.modal-box{background:#fff;border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow:auto;padding:18px}.modal-box h2{margin-top:0}\n.m-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}\n#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:6px}\n.ts{background:#1f2d2a;color:#fff;border-radius:10px;padding:10px 16px;font-size:.9rem}.ts.ok{background:var(--ok)}.ts.err{background:var(--err)}\n.aviso-proto{background:#fff7e0;border-bottom:1px solid #e9c46a;font-size:.8rem;padding:6px 14px;text-align:center}\n@media (max-width:600px){.row3{grid-template-columns:1fr}.top{position:static}.tabs{top:0}}\n@media print{.top,.tabs,.no-print,.aviso-proto,#toast{display:none!important}body{background:#fff}main{padding:0;max-width:none}.card{border:0;padding:0;break-inside:avoid}\n  table.grade{font-size:.62rem;min-width:0}.mes-card table.grade{break-inside:avoid;page-break-inside:avoid}@page{size:A4 landscape;margin:8mm}}\n.aviso-g{background:#fff2d9;color:#a86400;border-radius:8px;padding:6px 10px;font-size:.85rem;font-weight:600;margin:8px 0}\nhtml,body{background:transparent}main{padding-top:12px}\n<\/style><\/head><body>\n<nav class=\"tabs\" id=\"tabs\"><\/nav><main id=\"view\"><\/main>\n<div id=\"modal\" class=\"modal hidden\" onclick=\"if(event.target===this)fecharModal()\"><div class=\"modal-box\" id=\"modal-box\"><\/div><\/div><div id=\"toast\"><\/div>\n<script>/* ======================= MÓDULO DE ESCALAS (dentro da plataforma) ======================= */\nconst PAI = window.parent, CTX = PAI.ESC;\nconst DADOS = CTX.dados, EU = CTX.eu;\nconst ORIGINAL = JSON.parse(JSON.stringify(DADOS));\nconst HORAS = ['07h–08h','08h–09h','09h–10h','10h–11h','11h–12h','12h–13h','13h–14h','14h–15h','15h–16h','16h–17h','17h–18h','18h–19h'];\nconst DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta'];\nconst DIAS_C = ['Seg','Ter','Qua','Qui','Sex'];\nconst ATIV = {\n  consultorio:{n:'Consultório',c:'#dbeafe'}, acolhimento:{n:'Acolhimento',c:'#fde68a'}, domiciliar:{n:'Atendimento domiciliar',c:'#d9f99d'},\n  vigilancia:{n:'Vigilância',c:'#e9d5ff'}, gestao:{n:'Gestão local',c:'#f5d0fe'}, coletiva:{n:'Atividade coletiva / grupo',c:'#bbf7d0'},\n  canal:{n:'Canal teórico',c:'#fed7aa'}, canal_nucleo:{n:'Canal de núcleo',c:'#fdba74'}, aula:{n:'Aula',c:'#fecaca'},\n  reuniao:{n:'Reunião de equipe',c:'#c7d2fe'}, feedback:{n:'Feedback semanal',c:'#99f6e4'}, tcr:{n:'TCR',c:'#e7e5e4'},\n  estendido:{n:'Estendido',c:'#a5b4fc'}, sombra:{n:'Sombra',c:'#a5f3fc'}, interconsulta:{n:'Interconsulta',c:'#bae6fd'},\n  reun_prec:{n:'Reunião de preceptores',c:'#ddd6fe'}, pi:{n:'Preceptoria / Projeto de intervenção',c:'#fbcfe8'},\n  revisao:{n:'Revisão de prontuário',c:'#fcd34d'}, fb_sup:{n:'Feedback com a supervisão',c:'#5eead4'}, vacina:{n:'Sala de vacina',c:'#bef264'},\n  reun_enf:{n:'Reunião de enfermagem',c:'#c7d2fe'}, outro:{n:'Outra atividade',c:'#e2e8f0'}, intervalo:{n:'Intervalo',c:'#f1f5f9'}, ausente:{n:'Ausente',c:'#ffffff'}, vazio:{n:'—',c:'#ffffff'}\n};\nconst OPC_RES = ['consultorio','acolhimento','domiciliar','vigilancia','gestao','coletiva','canal','canal_nucleo','aula','reuniao','reun_enf','feedback','tcr','estendido','outro','intervalo','ausente'];\nconst OPC_PREC = ['consultorio','acolhimento','domiciliar','interconsulta','sombra','feedback','revisao','canal_nucleo','canal','reun_prec','reuniao','fb_sup','pi','vigilancia','gestao','coletiva','vacina','estendido','outro','intervalo','ausente'];\nconst SEM_CH = ['ausente','intervalo','vazio'];\n/* Semana padrão recomendada (documento \"Semana padrão dos residentes de Saúde da Família\"). 1 turno = 4h. */\nconst RECOM = [\n  {k:'domiciliar', n:'Atendimento domiciliar', R1:{max:8, t:'até 2 turnos (8h)'}, R2:{min:4, max:4, t:'1 turno (4h)'}},\n  {k:'consultorio', n:'Consultório', R1:{min:10, max:14, t:'aprox. 3 turnos (12h)'}, R2:{min:8, max:8, t:'2 turnos (8h)'}},\n  {k:'vigilancia', n:'Vigilância', R1:{min:3, max:5, t:'aprox. 4h'}, R2:{min:3, max:6, t:'aprox. 4 a 5h'}},\n  {k:'acolhimento', n:'Acolhimento', R1:{min:4, t:'1 turno (4h)'}, R2:{min:4, t:'1 turno (4h)'}},\n  {k:'coletiva', n:'Grupos', R1:{min:2, t:'no mínimo 2h'}, R2:{min:2, t:'no mínimo 2h'}, nota:'Nutrição, psicologia e fisioterapia podem ter carga maior.'},\n  {k:'canal', n:'Canal teórico', R1:{min:2, t:'2h'}, R2:{min:2, t:'2h'}},\n  {k:'canal_nucleo', n:'Canal de núcleo', R1:{min:1, t:'1h'}, R2:{min:1, t:'1h'}},\n  {k:'reuniao', n:'Reunião de equipe', R1:{min:2, t:'2h'}, R2:{min:2, t:'2h'}, nota:'Nutrição, psicologia e fisioterapia podem participar de mais reuniões.'},\n  {k:'gestao', n:'Gestão local', R1:{max:0, t:'não previsto'}, R2:{min:2, t:'no mínimo 2h'}},\n  {k:'tcr', n:'TCR', R1:{max:0, t:'não previsto'}, R2:{min:4, t:'1 turno (4h)'}},\n  {k:'feedback', n:'Feedback', R1:{min:1, t:'1h', obrig:true}, R2:{min:1, t:'1h', obrig:true}},\n  {k:'aula', n:'Aula', R1:{min:4, t:'1 turno (4h)'}, R2:{min:4, t:'1 turno (4h)'}},\n  {k:'reun_enf', n:'Reunião de enfermagem', R1:{min:2, t:'2h'}, R2:{min:2, t:'2h'}, so:'Enfermagem'}\n];\nfunction recomendacoes(p){\n  return RECOM.filter(r=>!r.so || r.so===p.categoria).map(r=>{\n    const g=r[p.ano]||r.R1, h=contar(p,r.k);\n    const ok=(g.min===undefined||h>=g.min)&&(g.max===undefined||h<=g.max);\n    return {n:r.n, t:g.t, h:h, ok:ok, obrig:g.obrig, nota:r.nota};\n  });\n}\n\nconst PARAM_PADRAO = { chResidente:45, chPreceptor:40, chSupervisor:40, aulaMin:4, canalMin:2, reuniaoMin:1, fbResMin:1, estendidoMin:2,\n  fbPorResidente:1, sombraMin:2, revisaoMin:2, canalNucleoMin:1, reunPrecMin:2, fbSupMin:1, piMin:2 };\nconst FERIADOS_PADRAO = [['2026-11-02','Finados'],['2026-11-20','Dia da Consciência Negra'],['2026-12-25','Natal'],['2026-12-08','Imaculada Conceição (confirmar ponto facultativo municipal)']];\nconst CHAVE='escalas-piloto-v1';\n\nconst MES0 = (()=>{ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); })();\nlet ST = Object.assign({ dados:DADOS, param:Object.assign({},PARAM_PADRAO,CTX.param||{}), feriados:CTX.feriados||[], como:EU.id, aba:null, mes:MES0, pessoaSel:null, diaSel:0, grupoSel:'residente' }, CTX.ui||{});\nST.dados=DADOS; ST.como=EU.id;\nfunction salvar(){ CTX.ui={aba:ST.aba, mes:ST.mes, pessoaSel:ST.pessoaSel, diaSel:ST.diaSel, grupoSel:ST.grupoSel}; }\nconst P = ()=>ST.dados.pessoas;\nconst pessoa = id => P().find(p=>p.id===id);\nconst PSEUDO = {id:EU.id, tipo:'supervisor', nome:EU.nome, curto:EU.nome.split(' ')[0], categoria:'', semGrade:true};\nconst eu = ()=>pessoa(ST.como) || PSEUDO;\nconst PODE_EDITAR_RES = ['supervisor','admin'].indexOf(EU.perfil)>-1;\nconst GESTAO_CAL = ['supervisor','gestor','admin'].indexOf(EU.perfil)>-1;\nconst residentesDe = pid => P().filter(p=>p.tipo==='residente' && p.preceptor===pid);\nfunction persistirGrade(p){\n  PAI.escSalvarGrade(p.id, p.grade).then(r=>{ p.atualizado=r.atualizado; toast('Agenda salva.','ok'); render(); })\n    .catch(e=>{ toast('Não foi possível salvar: '+((e&&e.message)||e),'err'); });\n}\nfunction persistirCalendario(){ PAI.escSalvarCalendario(ST.feriados, ST.dados.eventos).then(()=>toast('Calendário salvo.','ok')).catch(e=>toast('Não foi possível salvar: '+((e&&e.message)||e),'err')); }\nconst esc = s => String(s==null?'':s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));\nconst $ = s=>document.querySelector(s), $$ = s=>Array.from(document.querySelectorAll(s));\nfunction toast(m,t){ const e=document.createElement('div'); e.className='ts '+(t||''); e.textContent=m; $('#toast').appendChild(e); setTimeout(()=>e.remove(),3500); }\n\n/* ---------------- cálculos ---------------- */\nfunction horas(p, filtro){ let n=0; p.grade.forEach(l=>l.forEach(c=>{ if(filtro? filtro(c) : SEM_CH.indexOf(c.a)===-1) n++; })); return n; }\nfunction horasDia(p,d){ return p.grade.reduce((n,l)=>n+(SEM_CH.indexOf(l[d].a)===-1?1:0),0); }\nfunction contar(p,a,alvo){ return horas(p, c=>c.a===a && (!alvo || (c.alvos||[]).indexOf(alvo)>-1)); }\nfunction nomeCel(c){ return c.a==='vazio'?'':(c.d||ATIV[c.a].n); }\n\nfunction validar(p){\n  const A=[], par=ST.param, ok=(t)=>A.push({n:'ok',t}), err=(t)=>A.push({n:'erro',t}), av=(t)=>A.push({n:'aviso',t});\n  const ch=horas(p), meta = p.tipo==='residente'?par.chResidente : p.tipo==='preceptor'?par.chPreceptor:par.chSupervisor;\n  (ch===meta?ok:err)('Carga na grade: '+ch+'h semanais (referência: '+meta+'h)');\n  for(let d=0;d<5;d++){ const h=horasDia(p,d); if(h>6 && !p.grade.some(l=>l[d].a==='intervalo')) err(DIAS[d]+': '+h+'h de jornada sem intervalo registrado'); }\n  if(p.tipo==='residente'){\n    recomendacoes(p).forEach(x=>{ (x.ok?ok:(x.obrig?err:av))(x.n+': '+x.h+'h na agenda (recomendado '+p.ano+': '+x.t+')'); });\n    const ne=contar(p,'estendido'); (ne>=par.estendidoMin?ok:av)('Turno estendido: '+ne+'h (referência '+par.estendidoMin+'h)');\n    // escala de escuta inicial\n    (ST.dados.escuta||[]).filter(e=>e.ids.indexOf(p.id)>-1).forEach(e=>{\n      const c=p.grade[e.slot][e.dia]; (c.a==='acolhimento'?ok:err)('Escuta inicial '+DIAS_C[e.dia]+' '+HORAS[e.slot]+': '+(c.a==='acolhimento'?'confere':'na agenda está “'+nomeCel(c)+'”'));\n    });\n    // cruzamento com o preceptor\n    const pr=pessoa(p.preceptor);\n    if(pr && !p.vacancia){\n      for(let s=0;s<12;s++) for(let d=0;d<5;d++){\n        const c=p.grade[s][d], cp=pr.grade[s][d];\n        const precMarca = cp.a==='feedback' && (cp.alvos||[]).indexOf(p.id)>-1;\n        if(c.a==='feedback' && !precMarca) err('Feedback '+DIAS_C[d]+' '+HORAS[s]+': na agenda do(a) preceptor(a) '+pr.curto+' o horário está como “'+nomeCel(cp)+'”');\n        if(precMarca && c.a!=='feedback') err(pr.curto+' marca feedback com '+p.curto+' '+DIAS_C[d]+' '+HORAS[s]+', mas na agenda do residente está “'+nomeCel(c)+'”');\n        if(cp.a==='sombra' && (cp.alvos||[]).indexOf(p.id)>-1 && ['consultorio','acolhimento','domiciliar','coletiva','vacina'].indexOf(c.a)===-1)\n          av('Sombra '+DIAS_C[d]+' '+HORAS[s]+': residente está em “'+nomeCel(c)+'” (sombra pede atividade assistencial)');\n      }\n    }\n    if(p.vacancia) av('Esta agenda consta na planilha, mas o posto aparece como vacância na lotação 2026.');\n  }\n  if(p.tipo==='preceptor'){\n    residentesDe(p.id).filter(r=>!r.vacancia).forEach(r=>{ const n=contar(p,'feedback',r.id); (n>=par.fbPorResidente?ok:err)('Feedback com '+r.curto+' ('+r.ano+'): '+n+'h (mínimo '+par.fbPorResidente+'h)'); });\n    [['sombra',par.sombraMin,'Sombra'],['revisao',par.revisaoMin,'Revisão de prontuário'],['canal_nucleo',par.canalNucleoMin,'Canal de núcleo'],['reun_prec',par.reunPrecMin,'Reunião de preceptores'],['fb_sup',par.fbSupMin,'Feedback com a supervisão'],['pi',par.piMin,'Preceptoria / projeto de intervenção']]\n      .forEach(x=>{ const n=contar(p,x[0]); (n>=x[1]?ok:av)(x[2]+': '+n+'h (referência '+x[1]+'h)'); });\n    residentesDe(p.id).filter(r=>!r.vacancia).forEach(r=>{\n      for(let s=0;s<12;s++) for(let d=0;d<5;d++){ const cp=p.grade[s][d], c=r.grade[s][d];\n        if(cp.a==='feedback' && (cp.alvos||[]).indexOf(r.id)>-1 && c.a!=='feedback') err('Feedback com '+r.curto+' '+DIAS_C[d]+' '+HORAS[s]+': na agenda do residente está “'+nomeCel(c)+'”');\n        if(c.a==='feedback' && !(cp.a==='feedback' && (cp.alvos||[]).indexOf(r.id)>-1)) err(r.curto+' tem feedback '+DIAS_C[d]+' '+HORAS[s]+', mas na sua agenda está “'+nomeCel(cp)+'”'); }\n    });\n  }\n  return A;\n}\nfunction resumo(p){ const v=validar(p); return {erros:v.filter(x=>x.n==='erro').length, avisos:v.filter(x=>x.n==='aviso').length, v:v}; }\n\n/* ---------------- layout ---------------- */\nfunction abasPara(p){\n  if(p.tipo==='supervisor'){ const a=[['geral','Visão geral'],['onde','Quem está onde'],['agendas',PODE_EDITAR_RES?'Agendas (editar residentes)':'Agendas'],['meu','Meu mês padrão'],['calendario','Calendário do programa'],['param','Parâmetros']]; return p.semGrade? a.filter(x=>x[0]!=='meu') : a; }\n  if(p.tipo==='preceptor') return [['residentes','Agendas dos meus residentes'],['meu','Meu mês padrão'],['calendario','Calendário do programa']];\n  return [['meu','Minha agenda'],['calendario','Calendário do programa']];\n}\nfunction render(){\n  const p=eu(), abas=abasPara(p);\n  if(!abas.some(a=>a[0]===ST.aba)) ST.aba=abas[0][0];\n  $('#tabs').innerHTML = abas.map(a=>'<button class=\"'+(a[0]===ST.aba?'on':'')+'\" onclick=\"irAba(\\''+a[0]+'\\')\">'+a[1]+'<\/button>').join('');\n  const v=$('#view');\n  ({geral:vGeral, onde:vOnde, agendas:vAgendas, meu:vMeu, residentes:vResidentes, calendario:vCalendario, param:vParam})[ST.aba](v,p);\n  salvar();\n}\nfunction irAba(a){ ST.aba=a; render(); window.scrollTo(0,0); }\nfunction mudarComo(id){ ST.como=id; ST.aba=null; ST.pessoaSel=null; render(); }\n\n/* ---------------- grade ---------------- */\nfunction gradeHTML(p, editavel){\n  return '<div class=\"tab-wrap\"><table class=\"grade\"><thead><tr><th><\/th>'+DIAS.map(d=>'<th>'+d+'<br><small>'+'<\/small><\/th>').join('')+'<\/tr><\/thead><tbody>'+\n    HORAS.map((h,s)=>'<tr><th>'+h+'<\/th>'+DIAS.map((d,di)=>{ const c=p.grade[s][di], A=ATIV[c.a]||ATIV.outro;\n      return '<td class=\"cel'+(editavel?' ed':'')+(c.a==='ausente'?' aus':'')+'\" style=\"background:'+A.c+'\"'+(editavel?' onclick=\"editarCel(\\''+p.id+'\\','+s+','+di+')\"':'')+'><b>'+esc(A.n)+'<\/b>'+(c.d && norm(c.d)!==norm(A.n)?'<small>'+esc(c.d)+'<\/small>':'')+'<\/td>'; }).join('')+'<\/tr>').join('')+\n    '<tr class=\"tot\"><th>Horas<\/th>'+DIAS.map((d,di)=>'<td>'+horasDia(p,di)+'h<\/td>').join('')+'<\/tr><\/tbody><\/table><\/div>';\n}\nfunction norm(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\\s+/g,' ').trim(); }\nfunction checksHTML(p){\n  const v=validar(p), o={erro:'⛔',aviso:'⚠️',ok:'✅'};\n  const e=v.filter(x=>x.n==='erro').length, a=v.filter(x=>x.n==='aviso').length;\n  return '<div class=\"card\"><div class=\"ul\"><b>Conferência automática<\/b><span class=\"chip '+(e?'st-err':a?'st-warn':'st-ok')+'\">'+(e?e+' pendência(s)':a?a+' aviso(s)':'Tudo certo')+'<\/span><\/div>'+\n    '<ul class=\"chk\">'+v.sort((x,y)=>['erro','aviso','ok'].indexOf(x.n)-['erro','aviso','ok'].indexOf(y.n)).map(x=>'<li class=\"'+x.n+'\">'+o[x.n]+' '+esc(x.t)+'<\/li>').join('')+'<\/ul><\/div>';\n}\nfunction recomHTML(p){\n  const L=recomendacoes(p), ok=L.filter(x=>x.ok).length;\n  return '<div class=\"card\"><div class=\"ul\"><b>Semana padrão recomendada · '+esc(p.ano)+'<\/b><span class=\"chip '+(ok===L.length?'st-ok':'st-warn')+'\">'+ok+' de '+L.length+' dentro do recomendado<\/span><\/div>'+\n    '<div class=\"tab-wrap\"><table class=\"lst rec\"><thead><tr><th>Atividade<\/th><th>Recomendado<\/th><th>Na agenda<\/th><th><\/th><\/tr><\/thead><tbody>'+\n    L.map(x=>'<tr class=\"'+(x.ok?'':'fora-rec')+'\"><td>'+esc(x.n)+(x.nota?'<br><small class=\"mut\">'+esc(x.nota)+'<\/small>':'')+'<\/td><td>'+esc(x.t)+'<\/td><td><b>'+x.h+'h<\/b><\/td><td>'+(x.ok?'✅':(x.obrig?'⛔':'⚠️'))+'<\/td><\/tr>').join('')+\n    '<\/tbody><\/table><\/div><p class=\"mut sm\" style=\"margin:6px 0 0\">Referência: “Semana padrão dos residentes de Saúde da Família” (1 turno = 4h). Consultório compartilhado conta como consultório; atividades coletivas contam como grupos.<\/p><\/div>';\n}\nfunction legendaHTML(lista){ return '<div class=\"leg\">'+lista.map(k=>'<span><i style=\"background:'+ATIV[k].c+'\"><\/i>'+ATIV[k].n+'<\/span>').join('')+'<\/div>'; }\nfunction blocoPessoa(p, editavel){\n  const sub=p.tipo==='residente'? p.ano+' · '+p.categoria+' · '+p.equipe+' · Preceptor(a): '+((pessoa(p.preceptor)||{}).curto||'não vinculado(a)') : p.categoria;\n  return '<div class=\"card\"><div class=\"ul\"><div><h2 style=\"margin:0\">'+esc(p.nome)+'<\/h2><p class=\"mut sm\" style=\"margin:2px 0 0\">'+esc(sub)+'<\/p><\/div>'+\n    '<div class=\"bts no-print\">'+(editavel?'<button class=\"btn sm\" onclick=\"restaurarPessoa(\\''+p.id+'\\')\">Desfazer alterações de hoje<\/button>':'')+'<button class=\"btn sm\" onclick=\"window.print()\">Imprimir<\/button><\/div><\/div>'+\n    (p.semCadastro?'<p class=\"aviso-g\">Agenda ainda não cadastrada na plataforma'+(editavel?': toque nos horários para montar.':'.')+'<\/p>':'')+\n    (p.atualizado?'<p class=\"mut sm\" style=\"margin:4px 0\">Última alteração: '+esc(p.atualizado)+'<\/p>':'')+\n    (editavel?'<p class=\"mut sm\">Toque em um horário para alterar a atividade. Cada alteração é salva na hora.<\/p>':'')+gradeHTML(p,editavel)+legendaHTML(p.tipo==='residente'?OPC_RES:OPC_PREC)+'<\/div>'+\n    (p.tipo==='residente'?recomHTML(p):'')+checksHTML(p);\n}\n\n/* ---------------- edição de célula ---------------- */\nfunction editarCel(pid,s,d){\n  const p=pessoa(pid), c=p.grade[s][d], opc=p.tipo==='residente'?OPC_RES:OPC_PREC;\n  const res=p.tipo!=='residente'?residentesDe(p.id):[];\n  abrirModal('<h2>'+esc(p.curto)+' · '+DIAS[d]+' · '+HORAS[s]+'<\/h2>'+\n    '<div class=\"chips\" id=\"mA\">'+opc.map(k=>'<button type=\"button\" class=\"chip-bt'+(k===c.a?' on':'')+'\" data-k=\"'+k+'\" style=\"border-left:6px solid '+ATIV[k].c+'\">'+ATIV[k].n+'<\/button>').join('')+'<\/div>'+\n    '<div class=\"fld\"><label class=\"lbl\" for=\"mD\">Detalhe (opcional)<\/label><input type=\"text\" id=\"mD\" value=\"'+esc(c.d&&norm(c.d)!==norm(ATIV[c.a].n)?c.d:'')+'\" placeholder=\"Ex.: compartilhado com R2 Nutrição; Grupo Viva Movimento\"><\/div>'+\n    (res.length?'<div class=\"fld\" id=\"mAlvW\"><span class=\"lbl\">Residente(s) envolvido(s) — para feedback e sombra<\/span><div class=\"chips\">'+res.map(r=>'<label class=\"chip\"><input type=\"checkbox\" name=\"mAlv\" value=\"'+r.id+'\"'+((c.alvos||[]).indexOf(r.id)>-1?' checked':'')+'><span>'+esc(r.curto)+' ('+r.ano+')<\/span><\/label>').join('')+'<\/div><\/div>':'')+\n    '<div class=\"fld\"><label class=\"lbl\" for=\"mN\">Repetir nos próximos horários do mesmo dia<\/label><select id=\"mN\">'+[0,1,2,3,4,5].map(n=>'<option value=\"'+n+'\">'+(n?n+' horário(s)':'Não repetir')+'<\/option>').join('')+'<\/select><\/div>'+\n    '<div class=\"fld\"><span class=\"lbl\">Aplicar também em<\/span><div class=\"chips\">'+DIAS.map((x,i)=>i===d?'':'<label class=\"chip\"><input type=\"checkbox\" name=\"mDias\" value=\"'+i+'\"><span>'+DIAS_C[i]+'<\/span><\/label>').join('')+'<\/div><\/div>'+\n    '<div class=\"m-acoes\"><button class=\"btn\" onclick=\"fecharModal()\">Cancelar<\/button><button class=\"btn pri\" id=\"mOk\">Salvar<\/button><\/div>');\n  let sel=c.a;\n  $$('#mA .chip-bt').forEach(b=>b.onclick=()=>{ if(b.dataset.k!==sel) $('#mD').value=''; sel=b.dataset.k; $$('#mA .chip-bt').forEach(x=>x.classList.toggle('on',x===b)); });\n  $('#mOk').onclick=()=>{\n    const det=$('#mD').value.trim(), alv=$$('[name=\"mAlv\"]:checked').map(x=>x.value), rep=Number($('#mN').value), dias=[d].concat($$('[name=\"mDias\"]:checked').map(x=>Number(x.value)));\n    dias.forEach(dd=>{ for(let k=0;k<=rep && s+k<12;k++){ const nc={a:sel, d:det||ATIV[sel].n}; if(alv.length && ['feedback','sombra','pi'].indexOf(sel)>-1) nc.alvos=alv; p.grade[s+k][dd]=nc; } });\n    p.semCadastro=false; fecharModal(); render(); persistirGrade(p);\n  };\n}\nfunction restaurarPessoa(pid){ const o=ORIGINAL.pessoas.find(x=>x.id===pid); if(!o) return; const p=pessoa(pid); p.grade=JSON.parse(JSON.stringify(o.grade)); render(); persistirGrade(p); }\nfunction abrirModal(h){ $('#modal-box').innerHTML=h; $('#modal').classList.remove('hidden'); }\nfunction fecharModal(){ $('#modal').classList.add('hidden'); }\n\n/* ---------------- telas ---------------- */\nfunction vGeral(v){\n  const rs=P().filter(p=>p.tipo==='residente'), ps=P().filter(p=>p.tipo==='preceptor');\n  const linha=p=>{ const r=resumo(p); return '<tr onclick=\"verPessoa(\\''+p.id+'\\')\" class=\"click\"><td><b>'+esc(p.curto)+'<\/b><br><small class=\"mut\">'+esc(p.tipo==='residente'?p.ano+' '+p.categoria+' · '+p.equipe:p.categoria)+'<\/small><\/td><td>'+horas(p)+'h<\/td><td>'+(r.erros?'<span class=\"chip st-err\">'+r.erros+'<\/span>':'—')+'<\/td><td>'+(r.avisos?'<span class=\"chip st-warn\">'+r.avisos+'<\/span>':'—')+'<\/td><\/tr>'; };\n  const tot=P().filter(p=>p.tipo!=='supervisor').reduce((a,p)=>{ const r=resumo(p); a.e+=r.erros; a.a+=r.avisos; return a; },{e:0,a:0});\n  const cruz=[]; ps.forEach(p=>validar(p).filter(x=>x.n==='erro' && /feedback/i.test(x.t)).forEach(x=>cruz.push(p.curto+': '+x.t)));\n  rs.forEach(p=>validar(p).filter(x=>x.n==='erro' && /Escuta inicial/.test(x.t)).forEach(x=>cruz.push(p.curto+': '+x.t)));\n  v.innerHTML='<div class=\"pg-head\"><div><h1>Visão geral das escalas<\/h1><p class=\"mut sm\">'+esc(CTX.unidade)+' · conferência automática das agendas de residentes e do mês padrão dos preceptores.<\/p><\/div><\/div>'+\n    '<div class=\"grid g4\"><div class=\"kpi\"><span>Residentes<\/span><b>'+rs.length+'<\/b><\/div><div class=\"kpi\"><span>Preceptores<\/span><b>'+ps.length+'<\/b><\/div><div class=\"kpi\"><span>Pendências<\/span><b style=\"color:var(--err)\">'+tot.e+'<\/b><\/div><div class=\"kpi\"><span>Avisos<\/span><b style=\"color:var(--warn)\">'+tot.a+'<\/b><\/div><\/div>'+\n    (cruz.length?'<div class=\"card\" style=\"margin-top:12px;border-color:#f0c4c0\"><b>Cruzamentos que precisam de ajuste<\/b><ul class=\"chk\">'+cruz.map(t=>'<li class=\"erro\">⛔ '+esc(t)+'<\/li>').join('')+'<\/ul><\/div>':'')+\n    '<h3 class=\"sec-t\">Residentes<\/h3><div class=\"card\" style=\"padding:0\"><table class=\"lst\"><thead><tr><th>Residente<\/th><th>Carga<\/th><th>Pend.<\/th><th>Avisos<\/th><\/tr><\/thead><tbody>'+rs.map(linha).join('')+'<\/tbody><\/table><\/div>'+\n    '<h3 class=\"sec-t\">Preceptores (mês padrão)<\/h3><div class=\"card\" style=\"padding:0\"><table class=\"lst\"><thead><tr><th>Preceptor(a)<\/th><th>Carga<\/th><th>Pend.<\/th><th>Avisos<\/th><\/tr><\/thead><tbody>'+ps.map(linha).join('')+'<\/tbody><\/table><\/div>'+\n    '<p class=\"mut sm\">Toque em uma pessoa para ver a agenda e o detalhamento.<\/p>';\n}\nfunction verPessoa(id){ ST.pessoaSel=id; ST.aba='agendas'; render(); window.scrollTo(0,0); }\nfunction vAgendas(v){\n  const lista=P().filter(p=>p.tipo!=='supervisor'); if(!lista.length){ v.innerHTML='<div class=\"card vazio\">Nenhum residente ou preceptor cadastrado nesta unidade.<\/div>'; return; } if(!ST.pessoaSel || !pessoa(ST.pessoaSel) || pessoa(ST.pessoaSel).tipo==='supervisor') ST.pessoaSel=lista[0].id;\n  v.innerHTML='<div class=\"pg-head\"><div><h1>Agendas<\/h1><p class=\"mut sm\">'+(PODE_EDITAR_RES?'A supervisão pode editar a agenda dos residentes (assim como o preceptor). ':'Consulta das agendas. ')+'O mês padrão dos preceptores é editado pelo próprio preceptor e aparece aqui apenas para consulta.<\/p><\/div><\/div>'+\n    '<div class=\"filtros\"><label>Pessoa<select id=\"selP\" onchange=\"ST.pessoaSel=this.value;render()\">'+['residente','preceptor'].map(t=>'<optgroup label=\"'+(t==='residente'?'Residentes':'Preceptores')+'\">'+lista.filter(x=>x.tipo===t).map(x=>'<option value=\"'+x.id+'\"'+(x.id===ST.pessoaSel?' selected':'')+'>'+esc(x.curto)+'<\/option>').join('')+'<\/optgroup>').join('')+'<\/select><\/label><\/div>'+\n    blocoPessoa(pessoa(ST.pessoaSel), PODE_EDITAR_RES && pessoa(ST.pessoaSel).tipo==='residente')+mesHTML(pessoa(ST.pessoaSel));\n}\nfunction vResidentes(v,p){\n  const rs=residentesDe(p.id); if(!rs.length){ v.innerHTML='<div class=\"card vazio\">Nenhum residente vinculado.<\/div>'; return; }\n  if(!ST.pessoaSel || rs.every(r=>r.id!==ST.pessoaSel)) ST.pessoaSel=rs[0].id;\n  v.innerHTML='<div class=\"pg-head\"><div><h1>Agendas dos meus residentes<\/h1><p class=\"mut sm\">Você monta a agenda semanal de cada residente. A conferência mostra carga, atividades obrigatórias e se o feedback bate com o seu mês padrão.<\/p><\/div><\/div>'+\n    '<div class=\"chips\" style=\"margin-bottom:12px\">'+rs.map(r=>{ const z=resumo(r); return '<button class=\"chip-bt'+(r.id===ST.pessoaSel?' on':'')+'\" onclick=\"ST.pessoaSel=\\''+r.id+'\\';render()\">'+esc(r.curto)+' ('+r.ano+')'+(z.erros?' ⛔'+z.erros:'')+'<\/button>'; }).join('')+'<\/div>'+\n    blocoPessoa(pessoa(ST.pessoaSel), true);\n}\nfunction vMeu(v,p){\n  const edit=p.tipo!=='residente';\n  v.innerHTML='<div class=\"pg-head\"><div><h1>'+(p.tipo==='residente'?'Minha agenda':'Meu mês padrão')+'<\/h1><p class=\"mut sm\">'+(p.tipo==='residente'?'Agenda semanal definida pelo(a) seu(sua) preceptor(a) e o mês com feriados e atividades do programa.':'Monte a semana padrão; o mês é gerado automaticamente com feriados e atividades do programa.')+'<\/p><\/div><\/div>'+\n    blocoPessoa(p, edit)+mesHTML(p);\n}\nfunction vOnde(v){\n  const d=ST.diaSel||0, g=ST.grupoSel||'residente', ps=P().filter(p=>g==='todos'?p.tipo!=='supervisor':p.tipo===g);\n  const abrev=c=>({consultorio:'Cons',acolhimento:'Acol',domiciliar:'AD',vigilancia:'Vig',gestao:'Gest',coletiva:'Grupo',canal:'Canal',canal_nucleo:'Núcleo',aula:'Aula',reuniao:'Reun',feedback:'FB',tcr:'TCR',estendido:'Est',sombra:'Sombra',interconsulta:'Inter',reun_prec:'R.Prec',pi:'PI',revisao:'Rev',fb_sup:'FB Sup',vacina:'Vac',outro:'Outro',intervalo:'Int',ausente:'',vazio:''}[c.a]);\n  v.innerHTML='<div class=\"pg-head\"><div><h1>Quem está onde<\/h1><p class=\"mut sm\">Distribuição da equipe por horário. A linha de cobertura mostra quantas pessoas estão no acolhimento.<\/p><\/div><\/div>'+\n    '<div class=\"filtros\"><label>Dia<select onchange=\"ST.diaSel=Number(this.value);render()\">'+DIAS.map((x,i)=>'<option value=\"'+i+'\"'+(i===d?' selected':'')+'>'+x+'<\/option>').join('')+'<\/select><\/label>'+\n    '<label>Grupo<select onchange=\"ST.grupoSel=this.value;render()\">'+[['residente','Residentes'],['preceptor','Preceptores'],['todos','Todos']].map(x=>'<option value=\"'+x[0]+'\"'+(x[0]===g?' selected':'')+'>'+x[1]+'<\/option>').join('')+'<\/select><\/label><\/div>'+\n    '<div class=\"card\" style=\"padding:8px\"><div class=\"tab-wrap\"><table class=\"onde\"><thead><tr><th><\/th>'+ps.map(p=>'<th title=\"'+esc(p.nome)+'\">'+esc(p.curto.split(' ')[0])+'<\/th>').join('')+'<th>Acolh.<\/th><\/tr><\/thead><tbody>'+\n    HORAS.map((h,s)=>{ const n=ps.filter(p=>p.grade[s][d].a==='acolhimento').length; return '<tr><th>'+h+'<\/th>'+ps.map(p=>{ const c=p.grade[s][d]; return '<td style=\"background:'+ATIV[c.a].c+'\" title=\"'+esc(nomeCel(c))+'\">'+abrev(c)+'<\/td>'; }).join('')+'<td class=\"cob'+(n===0&&s<10?' zero':'')+'\">'+n+'<\/td><\/tr>'; }).join('')+\n    '<\/tbody><\/table><\/div><\/div>'+legendaHTML(['consultorio','acolhimento','domiciliar','vigilancia','gestao','coletiva','canal','canal_nucleo','aula','reuniao','feedback','tcr','estendido','sombra','interconsulta','pi','revisao','intervalo']);\n}\nfunction vCalendario(v,p){\n  const sup=GESTAO_CAL, mes=ST.mes;\n  const evs=ST.dados.eventos.filter(e=>e.data.slice(0,7)===mes).sort((a,b)=>a.data.localeCompare(b.data));\n  const fer=ST.feriados.filter(f=>f.data.slice(0,7)===mes);\n  v.innerHTML='<div class=\"pg-head\"><div><h1>Calendário do programa<\/h1><p class=\"mut sm\">Atividades lançadas uma vez pela supervisão e aplicadas automaticamente nas agendas do mês.<\/p><\/div><\/div>'+\n    '<div class=\"filtros\"><label>Mês<input type=\"month\" value=\"'+mes+'\" onchange=\"ST.mes=this.value||ST.mes;render()\"><\/label><\/div>'+\n    '<div class=\"card\"><b>Feriados e pontos facultativos<\/b><ul class=\"chk\">'+(fer.length?fer.map(f=>'<li>📅 '+dataBr(f.data)+' — '+esc(f.nome)+(sup?' <button class=\"x\" onclick=\"remFer(\\''+f.data+'\\')\">×<\/button>':'')+'<\/li>').join(''):'<li class=\"mut\">Nenhum feriado cadastrado neste mês.<\/li>')+'<\/ul>'+\n    (sup?'<div class=\"row3\"><input type=\"date\" id=\"fD\"><input type=\"text\" id=\"fN\" placeholder=\"Descrição\"><button class=\"btn sm\" onclick=\"addFer()\">Adicionar<\/button><\/div>':'')+'<\/div>'+\n    '<div class=\"card\"><b>Atividades do programa<\/b><ul class=\"chk\">'+(evs.length?evs.map((e,i)=>'<li>🗓️ <b>'+dataBr(e.data)+'<\/b> · '+esc(e.tipo)+': '+esc(e.titulo)+(e.resp?' <span class=\"mut\">('+esc(e.resp)+')<\/span>':'')+(sup?' <button class=\"x\" onclick=\"remEv(\\''+e.data+'\\',\\''+esc(e.titulo).replace(/'/g,'')+'\\')\">×<\/button>':'')+'<\/li>').join(''):'<li class=\"mut\">Nenhuma atividade no mês.<\/li>')+'<\/ul>'+\n    (sup?'<div class=\"row3\"><input type=\"date\" id=\"eD\"><select id=\"eT\"><option>Canal teórico<\/option><option>Reunião de preceptores<\/option><option>Atividade intersetorial<\/option><option>Aula / EP<\/option><option>Outro<\/option><\/select><input type=\"text\" id=\"eN\" placeholder=\"Tema / atividade\"><button class=\"btn sm\" onclick=\"addEv()\">Adicionar<\/button><\/div>':'')+'<\/div>';\n}\nfunction addFer(){ const d=$('#fD').value, n=$('#fN').value.trim(); if(!d||!n) return toast('Informe data e descrição.','err'); ST.feriados.push({data:d,nome:n}); CTX.feriados=ST.feriados; render(); persistirCalendario(); }\nfunction remFer(d){ ST.feriados=ST.feriados.filter(f=>f.data!==d); CTX.feriados=ST.feriados; render(); persistirCalendario(); }\nfunction addEv(){ const d=$('#eD').value, t=$('#eT').value, n=$('#eN').value.trim(); if(!d||!n) return toast('Informe data e tema.','err'); ST.dados.eventos.push({data:d,tipo:t,titulo:n,resp:''}); render(); persistirCalendario(); }\nfunction remEv(d,t){ ST.dados.eventos=ST.dados.eventos.filter(e=>!(e.data===d && esc(e.titulo).replace(/'/g,'')===t)); render(); persistirCalendario(); }\nfunction vParam(v){\n  const L=[['chResidente','Carga semanal na grade — residente (h)'],['chPreceptor','Carga semanal — preceptor (h)'],['chSupervisor','Carga semanal — supervisor (h)'],['estendidoMin','Residente: turno estendido (h)'],['fbPorResidente','Preceptor: feedback por residente (h)'],['sombraMin','Preceptor: sombra (h)'],['revisaoMin','Preceptor: revisão de prontuário (h)'],['canalNucleoMin','Preceptor: canal de núcleo (h)'],['reunPrecMin','Preceptor: reunião de preceptores (h)'],['fbSupMin','Preceptor: feedback com a supervisão (h)'],['piMin','Preceptor: preceptoria / projeto de intervenção (h)']];\n  v.innerHTML='<div class=\"pg-head\"><div><h1>Parâmetros da conferência<\/h1><p class=\"mut sm\">Valores de referência usados nas verificações. Os mínimos do preceptor seguem o modelo do mês padrão do PRMFC e podem ser ajustados para a residência multiprofissional.<\/p><\/div><\/div>'+\n    '<div class=\"card\">'+L.map(x=>'<div class=\"prm\"><label for=\"pp_'+x[0]+'\">'+x[1]+'<\/label><input type=\"number\" min=\"0\" max=\"60\" id=\"pp_'+x[0]+'\" value=\"'+ST.param[x[0]]+'\"><\/div>').join('')+\n    '<div class=\"m-acoes\"><button class=\"btn\" onclick=\"ST.param=Object.assign({},PARAM_PADRAO);render();salvarParam()\">Restaurar padrão<\/button><button class=\"btn pri\" onclick=\"salvarParam()\">Salvar<\/button><\/div><\/div>'+\n    '<div class=\"card\"><b>Semana padrão recomendada dos residentes<\/b><div class=\"tab-wrap\"><table class=\"lst rec\"><thead><tr><th>Atividade<\/th><th>R1<\/th><th>R2<\/th><\/tr><\/thead><tbody>'+\n      RECOM.map(r=>'<tr><td>'+esc(r.n)+(r.so?' <small class=\"mut\">('+r.so+')<\/small>':'')+'<\/td><td>'+esc(r.R1.t)+'<\/td><td>'+esc(r.R2.t)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><\/div><\/div>'+\n''+'';\n}\nfunction salvarParam(){ Object.keys(PARAM_PADRAO).forEach(k=>{ const el=$('#pp_'+k); if(el) ST.param[k]=Number(el.value)||0; }); CTX.param=ST.param; render();\n  if(!GESTAO_CAL) return; PAI.escSalvarParam(ST.param).then(()=>toast('Parâmetros salvos.','ok')).catch(e=>toast('Não foi possível salvar: '+((e&&e.message)||e),'err')); }\n\n/* ---------------- mês ---------------- */\nfunction dataBr(iso){ const p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }\nfunction semanasDoMes(ym){\n  const [y,m]=ym.split('-').map(Number), ini=new Date(y,m-1,1), fim=new Date(y,m,0);\n  const seg=new Date(ini); seg.setDate(ini.getDate()-((ini.getDay()+6)%7));\n  const sem=[]; for(let d=new Date(seg); d<=fim; d.setDate(d.getDate()+7)){ const w=[]; for(let i=0;i<5;i++){ const x=new Date(d); x.setDate(d.getDate()+i); w.push(x); } sem.push(w); }\n  return sem;\n}\nconst iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');\nfunction mesHTML(p){\n  const ym=ST.mes, [y,m]=ym.split('-').map(Number);\n  const nomesMes=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];\n  const evs=ST.dados.eventos.filter(e=>e.data.slice(0,7)===ym);\n  let total=0;\n  const semanas=semanasDoMes(ym).map(w=>{\n    return '<table class=\"grade mes\"><thead><tr><th><\/th>'+w.map((d,i)=>{ const f=ST.feriados.find(x=>x.data===iso(d)); const fora=d.getMonth()!==m-1;\n      return '<th class=\"'+(fora?'fora':'')+(f?' fer':'')+'\">'+String(d.getDate()).padStart(2,'0')+' · '+DIAS_C[i]+(f?'<br><small>'+esc(f.nome)+'<\/small>':'')+'<\/th>'; }).join('')+'<\/tr><\/thead><tbody>'+\n      HORAS.map((h,s)=>'<tr><th>'+h+'<\/th>'+w.map((d,i)=>{\n        const fora=d.getMonth()!==m-1, f=ST.feriados.find(x=>x.data===iso(d));\n        if(fora) return '<td class=\"fora\"><\/td>';\n        if(f) return '<td class=\"fer\">Feriado<\/td>';\n        const c=p.grade[s][i], A=ATIV[c.a]||ATIV.outro; if(SEM_CH.indexOf(c.a)===-1) total++;\n        const ev=evs.find(e=>e.data===iso(d) && ((e.tipo==='Canal teórico' && c.a==='canal') || (e.tipo==='Reunião de preceptores' && c.a==='reun_prec')));\n        return '<td style=\"background:'+A.c+'\"'+(c.a==='ausente'?' class=\"aus\"':'')+'><b>'+esc(A.n)+'<\/b>'+(ev?'<small class=\"ev\">'+esc(ev.titulo)+'<\/small>':'')+'<\/td>';\n      }).join('')+'<\/tr>').join('')+'<\/tbody><\/table>';\n  }).join('');\n  const lista=evs.sort((a,b)=>a.data.localeCompare(b.data)).map(e=>'<li><b>'+dataBr(e.data).slice(0,5)+'<\/b> · '+esc(e.tipo)+': '+esc(e.titulo)+'<\/li>').join('');\n  return '<div class=\"card mes-card\"><div class=\"ul\"><div><h2 style=\"margin:0\">Mês: '+nomesMes[m-1]+' de '+y+'<\/h2><p class=\"mut sm\" style=\"margin:2px 0 0\">'+esc(p.nome)+' · '+total+'h no mês (dias úteis, descontados feriados)<\/p><\/div>'+\n    '<div class=\"bts no-print\"><input type=\"month\" value=\"'+ym+'\" onchange=\"ST.mes=this.value||ST.mes;render()\"><button class=\"btn sm\" onclick=\"window.print()\">Imprimir mês<\/button><\/div><\/div>'+\n    '<div class=\"tab-wrap\">'+semanas+'<\/div>'+(lista?'<div class=\"obs\"><b>Atividades do programa no mês<\/b><ul>'+lista+'<\/ul><\/div>':'')+\n    '<div class=\"obs\"><b>Observações<\/b><ul><li>As atividades devem respeitar a carga horária regulamentar; horas extras só com autorização prévia da direção.<\/li><li>Intervalo mínimo de 1h em jornadas diárias acima de 6h.<\/li><li>Dúvidas na elaboração das escalas: acione a supervisão de preceptoria.<\/li><\/ul><\/div><\/div>';\n}\n\nwindow.addEventListener('load',()=>{ render(); if(PAI.escPronto) PAI.escPronto(window); });\n<\/script>\n<\/body><\/html>\n";
 </script>
 </body>
 </html>
