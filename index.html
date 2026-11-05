@@ -1946,7 +1946,8 @@ async function vUsuarios(){
 function pintarUsuarios(){
   const f=val('uF'); const l=(S.listaU||[]).filter(u=>!f||u.perfil===f);
   const box=$('#ul'); if(!box) return;
-  box.innerHTML = l.length ? l.map(u=>'<div class="card reg click" onclick="formUsuario(\''+u.id+'\')"><div class="ul"><div><b>'+esc(u.nome)+'</b>'+(u.ativo?'':' <span class="chip st-rascunho">Inativo</span>')+
+  const cont={}; (S.listaU||[]).forEach(u=>{ const k=String(u.nome).trim().toLowerCase(); cont[k]=(cont[k]||0)+1; });
+  box.innerHTML = l.length ? l.map(u=>'<div class="card reg click" onclick="formUsuario(\''+u.id+'\')"><div class="ul"><div><b>'+esc(u.nome)+'</b>'+(u.ativo?'':' <span class="chip st-rascunho">Inativo</span>')+(cont[String(u.nome).trim().toLowerCase()]>1?' <span class="chip st-aguardando">Possível duplicado</span>':'')+
     '<div class="reg-meta">'+esc(PERFIL_NOME[u.perfil])+(u.categoria?' · '+esc(u.categoria):'')+' · '+esc(u.unidade)+(u.ano?' · '+esc(u.ano):'')+(u.equipe?' · '+esc(u.equipe):'')+' · usuário: '+esc(u.login)+
     (u.perfil==='residente'&&u.preceptor_id?' · preceptor(a): '+esc(nomeListaU(u.preceptor_id)):'')+'</div></div></div></div>').join('') : '<div class="card vazio">Nenhum usuário.</div>';
 }
@@ -1968,19 +1969,26 @@ function formUsuario(id){
     '<div class="fld"><label class="lbl" for="uEq">Equipe</label><input type="text" id="uEq" placeholder="Ex.: ESF 60 Ipê Amarelo" value="'+esc(u.equipe||'')+'"></div></div>'+
     '<div class="fld" id="uPrW"><label class="lbl" for="uPr">Preceptor(a) de referência</label><select id="uPr"><option value="">—</option>'+precs.map(x=>'<option value="'+x.id+'"'+(x.id===u.preceptor_id?' selected':'')+'>'+esc(x.nome)+(x.categoria?' — '+esc(x.categoria):'')+'</option>').join('')+'</select></div>'+
     (id?'<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="uA"'+(u.ativo?' checked':'')+'> Usuário ativo</label>':'')+
-    '<div class="erro-m" id="uErr"></div><div class="m-acoes">'+(id?'<button class="btn" id="uRs">Redefinir senha</button>':'')+
+    '<div class="erro-m" id="uErr"></div><div class="m-acoes">'+(id&&id!==S.eu.id?'<button class="btn dng" id="uDel" style="margin-right:auto">Excluir usuário</button>':'')+(id?'<button class="btn" id="uRs">Redefinir senha</button>':'')+
     '<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="uOk">Salvar</button></div>');
   const tg=()=>{ const r=val('uP')!=='residente'; $('#uPrW').classList.toggle('hidden', r); $('#uAnoW').classList.toggle('hidden', r); }; $('#uP').onchange=tg; tg();
   $('#uOk').onclick=async()=>{
+    const bt=$('#uOk'); if(bt.disabled) return;
     const d={id:id||'', nome:val('uN'), login:val('uL').toLowerCase(), email:val('uE'), perfil:val('uP'), categoria:val('uC'),
       unidade: $('#uU')?val('uU'):S.eu.unidade, preceptor_id:val('uPr'), ano:val('uAno'), equipe:val('uEq'), ativo: $('#uA')?$('#uA').checked:true};
+    if(!d.nome || !d.login){ $('#uErr').textContent='Informe o nome completo e o usuário (login).'; return; }
+    bt.disabled=true; bt.textContent='Salvando…'; $('#uErr').textContent='';
     try{
       const r=await call('salvarUsuario', d, true);
       S.listaU=await call('listarUsuarios',{},true); recarregarUsuarios();
       if(r.senhaTemporaria) mostrarSenha(d.nome, d.login, r.senhaTemporaria); else { fecharModal(); toast('Usuário atualizado.','ok'); }
       pintarUsuarios();
-    }catch(e){ $('#uErr').textContent=msgErro(e); }
+    }catch(e){ const er=$('#uErr'); if(er) er.textContent=msgErro(e); const b=$('#uOk'); if(b){ b.disabled=false; b.textContent='Salvar'; } }
   };
+  if(id && $('#uDel')) $('#uDel').onclick=()=>confirmar('Excluir usuário',
+    'O cadastro de '+u.nome+' (usuário: '+u.login+') será removido definitivamente. Só é possível excluir quem não tem documentos, assinaturas ou frequência registrados; nesses casos, desative o usuário.','Excluir', async()=>{
+    try{ await call('excluirUsuario',{id:id}); S.listaU=await call('listarUsuarios',{},true); recarregarUsuarios(); pintarUsuarios(); toast('Usuário excluído.','ok'); }catch(e){}
+  });
   if(id) $('#uRs').onclick=()=>confirmar('Redefinir senha','Uma nova senha provisória será gerada e a atual deixará de funcionar.','Redefinir', async()=>{
     try{ const r=await call('resetarSenha',{id:id}); mostrarSenha(u.nome, u.login, r.senhaTemporaria); }catch(e){}
   });
