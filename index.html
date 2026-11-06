@@ -741,7 +741,21 @@ const FORMS = {
   ]},
   CANAL: { campos: [
     {id:'nucleo', label:'Núcleo profissional', tipo:'select', opcoes:CATEGORIAS, obrig:true},
+    {id:'nucleos_comp', label:'Compartilhar com outros núcleos (opcional)', tipo:'chipsm', opcoes:CATEGORIAS, ajuda:'Residentes e preceptores dos núcleos marcados também verão este encontro e os arquivos.'},
     {id:'tema', label:'Tema', tipo:'text', obrig:true},
+    {id:'presentes', label:'Residentes presentes', tipo:'multi', fonte:['residente']},
+    {id:'resumo', label:'Síntese da discussão', tipo:'textarea'},
+    {id:'encaminhamentos', label:'Encaminhamentos', tipo:'textarea'},
+    {tipo:'bloco', label:'Documentos e materiais'},
+    {id:'ata_canal', label:'Ata do encontro', tipo:'anexos', aceita:'image/*,application/pdf', max:3, ajuda:'PDF ou foto da ata, até 3 arquivos.'},
+    {id:'artigo', label:'Artigo científico discutido', tipo:'anexos', aceita:'application/pdf,image/*', max:5, ajuda:'PDF do artigo (até 10 MB), até 5 arquivos.'},
+    {id:'artigo_ref', label:'Referência do artigo', tipo:'textarea', linhas:2, ph:'Autores. Título. Revista, ano. DOI ou link.', ajuda:'Opcional. Útil quando o PDF não pode ser anexado.'},
+    {id:'documentos', label:'Outros materiais', tipo:'anexos', aceita:'image/*,application/pdf', max:10, ajuda:'PDF ou imagem, até 10 arquivos (PDF de até 10 MB). Ex.: apresentação, fotos do quadro, lista de presença. Arquivos do Word ou PowerPoint: salve como PDF antes de enviar.'}
+  ]},
+
+  TEORICO: { campos: [
+    {id:'tema', label:'Tema', tipo:'text', obrig:true},
+    {id:'facilitador', label:'Facilitador(es)', tipo:'text', ph:'Quem conduziu o encontro'},
     {id:'presentes', label:'Residentes presentes', tipo:'multi', fonte:['residente']},
     {id:'resumo', label:'Síntese da discussão', tipo:'textarea'},
     {id:'encaminhamentos', label:'Encaminhamentos', tipo:'textarea'},
@@ -817,7 +831,9 @@ const DESCR = {
   PRONTUARIO:'Avaliação do registro clínico do residente (SOAP do PEC) com Índice de Qualidade do Registro.',
   PI:'Projeto de intervenção (guia LAB INOVAAPS), por etapas, com PDF em ABNT.',
   ATA:'Atas das reuniões de preceptores e de equipe, com lista de presença e assinatura dos participantes.',
-  CANAL:'Registro dos encontros de canal de núcleo, com envio de documentos e materiais.',
+  CANAL:'Registro dos encontros de canal de núcleo, com envio de documentos e materiais. Pode ser compartilhado com outros núcleos.',
+  TEORICO:'Encontros do canal teórico, abertos a todos os residentes, com ata, artigos e materiais discutidos.',
+  documentos:'Documentos enviados para sua assinatura e histórico dos documentos assinados.',
   META4:'Registro de reuniões e atividades em grupo (fotos, lista de presença ou ata) para o relatório da Meta 4.',
   SUPERVISAO:'Feedback do supervisor técnico com o preceptor. Conteúdo sigiloso: visível apenas ao supervisor e ao preceptor.'
 };
@@ -834,6 +850,8 @@ const MENU = [
   {id:'PRONTUARIO', nome:'Avaliação de prontuário', perfis:['preceptor','supervisor','admin','gestor'], g:'Principal', c:'#0891b2', c2:'#e0f4f8', d:'Qualidade do registro SOAP'},
   {id:'PI', nome:'Projeto de intervenção', perfis:LEITORES.concat(['residente']), g:'Principal', c:'#d97706', c2:'#fdf1df', d:'Guia LAB InovaAPS e PDF ABNT'},
   {id:'ATA', nome:'Atas de reunião', perfis:LEITORES.concat(['residente','colaborador']), g:'Reuniões e registros', c:'#db2777', c2:'#fce7f1', d:'Reuniões de preceptores e de equipe'},
+  {id:'documentos', nome:'Meus documentos', perfis:['residente','colaborador'], g:'Principal', c:'#2563eb', c2:'#e6eefd', d:'Assinaturas pendentes e histórico'},
+  {id:'TEORICO', nome:'Canal teórico', perfis:LEITORES.concat(['residente']), g:'Reuniões e registros', c:'#0f766e', c2:'#ddf3f0', d:'Encontros abertos a todos os residentes'},
   {id:'CANAL', nome:'Canal de núcleo', perfis:LEITORES.concat(['residente']), g:'Reuniões e registros', c:'#16a34a', c2:'#e3f6e9', d:'Encontros e materiais por núcleo'},
   {id:'SUPERVISAO', nome:'Feedback da supervisão', perfis:LEITORES, g:'Reuniões e registros', c:'#ea580c', c2:'#fdeadd', d:'Supervisor técnico com preceptor'},
   {id:'META4', nome:'Meta 4', perfis:null, g:'Reuniões e registros', c:'#e11d48', c2:'#fde4e9', d:'Atividades em grupo e reuniões'},
@@ -856,6 +874,8 @@ const ICONES = {
   ATA:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/>',
   CANAL:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M16 4a4 4 0 0 1 0 8"/><path d="M22 21c0-3-2-5-4-5.6"/>',
   SUPERVISAO:'<circle cx="12" cy="8" r="6"/><path d="M8.5 13 7 22l5-3 5 3-1.5-9"/>',
+  TEORICO:'<path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/>',
+  documentos:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/>',
   META4:'<path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="4"/>',
   frequencia:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
   escalas:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h2M14 14h2M8 18h2"/>',
@@ -1073,9 +1093,9 @@ async function atualizarSino(){ try{ const l=await call('notificacoes',{},true);
 function view(html){ const v=$('#view'); v.oninput=null; v.onchange=null; v.innerHTML=html; window.scrollTo(0,0); }
 
 function ir(rota, params){
-  if(['inicio','painel','usuarios','frequencia','escalas'].indexOf(rota)>-1 || FORMS[rota]) S.ultimaLista=rota;
+  if(['inicio','painel','usuarios','frequencia','escalas','documentos'].indexOf(rota)>-1 || FORMS[rota]) S.ultimaLista=rota;
   S.rota=rota; S.params=params||{};
-  const ativo = rota==='meta4rel' ? 'META4' : FORMS[rota] || ['inicio','painel','usuarios','frequencia','escalas'].indexOf(rota)>-1 ? rota : (S.params.tipo || S.ultimaLista);
+  const ativo = rota==='meta4rel' ? 'META4' : FORMS[rota] || ['inicio','painel','usuarios','frequencia','escalas','documentos'].indexOf(rota)>-1 ? rota : (S.params.tipo || S.ultimaLista);
   $$('#tabs .nv[data-r]').forEach(b=>b.classList.toggle('on', b.dataset.r===ativo));
   const mAt=MENU.find(m=>m.id===ativo); const tt=$('#topTit'); if(tt) tt.textContent=mAt?mAt.nome:'Plataforma da Preceptoria';
   menuLateral(false);
@@ -1084,6 +1104,7 @@ function ir(rota, params){
   if(rota==='usuarios') return vUsuarios();
   if(rota==='frequencia') return vFrequencia();
   if(rota==='escalas') return vEscalas();
+  if(rota==='documentos') return vDocumentos();
   if(rota==='meta4rel') return vRelMeta4();
   if(rota==='editar') return vEditar(S.params);
   if(rota==='doc') return vDoc(S.params);
@@ -1112,6 +1133,7 @@ function minhaPendencia(r){ return r.assinaturas.some(a=>a.usuario_id===S.eu.id 
 function podeAbrir(r){
   if(r.autor_id===S.eu.id || r.residente_id===S.eu.id) return true;
   if((r.compartilhado||[]).indexOf(S.eu.id)>-1) return true;
+  if(r.tipo==='CANAL' || r.tipo==='TEORICO') return true;   // o servidor só lista o que a pessoa pode ver
   if(r.assinaturas.some(a=>a.usuario_id===S.eu.id)) return true;
   if(r.tipo==='FEEDBACK' || r.tipo==='SUPERVISAO') return false;
   return GESTAO.indexOf(S.eu.perfil)>-1;
@@ -1178,6 +1200,26 @@ async function vInicio(){
 function kpiMeta(rot, n, meta){
   const p = meta ? Math.min(100, Math.round(n/meta*100)) : 0;
   return '<div class="kpi"><span>'+esc(rot)+'</span><b>'+n+'</b><small> / meta '+meta+'</small>'+barra(p)+'<small>'+p+'% da meta</small></div>';
+}
+
+/* ======================= MEUS DOCUMENTOS (residente) ======================= */
+const TIPOS_ASSINATURA=['FEEDBACK','PDI','PRONTUARIO','ATA','SUPERVISAO'];
+async function vDocumentos(){
+  if(S.filtros.docTipo===undefined) S.filtros.docTipo='';
+  view('<div class="pg-head"><div class="pg-tit">'+bolha('documentos')+'<div><h1>Meus documentos</h1><p class="mut sm">'+esc(DESCR.documentos)+'</p></div></div></div>'+
+    '<div class="filtros"><label>Tipo<select id="fDocT"><option value="">Todos</option>'+TIPOS_ASSINATURA.filter(t=>S.tipos[t]).map(t=>'<option value="'+t+'"'+(S.filtros.docTipo===t?' selected':'')+'>'+esc(S.tipos[t].nome)+'</option>').join('')+'</select></label></div>'+
+    '<div id="docs"><div class="vazio">Carregando…</div></div>');
+  $('#fDocT').onchange=e=>{ S.filtros.docTipo=e.target.value; pintar(); };
+  let regs=[]; try{ regs=await call('listar',{}); }catch(e){ return; }
+  const meus=regs.filter(r=>TIPOS_ASSINATURA.indexOf(r.tipo)>-1 && r.status!=='rascunho' && (r.residente_id===S.eu.id || r.autor_id===S.eu.id || r.assinaturas.some(a=>a.usuario_id===S.eu.id)));
+  function pintar(){
+    const box=$('#docs'); if(!box) return;
+    const l=meus.filter(r=>!S.filtros.docTipo || r.tipo===S.filtros.docTipo);
+    const pend=l.filter(minhaPendencia), hist=l.filter(r=>!minhaPendencia(r));
+    box.innerHTML='<h3 class="sec-t">Aguardando sua assinatura ('+pend.length+')</h3>'+listaCards(pend,'Nenhum documento aguardando sua assinatura.')+
+      '<h3 class="sec-t">Histórico ('+hist.length+')</h3>'+listaCards(hist,'Nenhum documento no histórico.');
+  }
+  pintar();
 }
 
 /* ======================= LISTAS ======================= */
@@ -1587,9 +1629,9 @@ async function vEditar(p){
   }
 
   let bt='<button class="btn" onclick="voltar()">Cancelar</button>';
-  if(tipo!=='PI' || S.edit.souAutor) bt+='<button class="btn dng'+(p.id?'':' hidden')+'" id="btExcl" onclick="excluirReg(S.edit.id)">'+(['CANAL','META4','PI'].indexOf(tipo)>-1?'Excluir':'Excluir rascunho')+'</button>';
+  if(tipo!=='PI' || S.edit.souAutor) bt+='<button class="btn dng'+(p.id?'':' hidden')+'" id="btExcl" onclick="excluirReg(S.edit.id)">'+(['CANAL','TEORICO','META4','PI'].indexOf(tipo)>-1?'Excluir':'Excluir rascunho')+'</button>';
   if(tipo==='PI') bt+='<button class="btn" onclick="salvarReg(\'parcial\')">Salvar progresso</button>'+(S.edit.souAutor?'<button class="btn pri" onclick="salvarReg(\'concluir\')">Concluir projeto</button>':'');
-  else if(tipo==='CANAL' || tipo==='META4') bt+='<button class="btn pri" onclick="salvarReg(\'registrar\')">'+(tipo==='META4'?'Enviar registro':'Registrar')+'</button>';
+  else if(tipo==='CANAL' || tipo==='TEORICO' || tipo==='META4') bt+='<button class="btn pri" onclick="salvarReg(\'registrar\')">'+(tipo==='META4'?'Enviar registro':'Registrar')+'</button>';
   else bt+='<button class="btn" onclick="salvarReg(\'rascunho\')">Salvar rascunho</button><button class="btn pri" onclick="salvarReg(\'enviar\')">Assinar e enviar</button>';
   view(h+'<div class="barra-acoes no-print">'+bt+'</div>');
 
@@ -1669,7 +1711,8 @@ function coletar(){
     if(tipo==='PI'){ d.versao=S.edit.versao||''; if(S.edit.souAutor) d.compartilhado=S.edit.compart||[]; }
   }
   if(tipo==='META4') d.titulo=(conteudo.tipo_ativ==='Outro'?(conteudo.tipo_outro||'Outra atividade'):(conteudo.tipo_ativ||'Atividade'))+' — '+dataBr(d.data);
-  if(tipo==='CANAL') d.titulo='Canal de núcleo — '+(conteudo.nucleo||'')+(conteudo.tema?': '+conteudo.tema:'');
+  if(tipo==='CANAL') d.titulo='Canal de núcleo — '+(conteudo.nucleo||'')+((conteudo.nucleos_comp||[]).length?' + '+conteudo.nucleos_comp.join(', '):'')+(conteudo.tema?': '+conteudo.tema:'');
+  if(tipo==='TEORICO') d.titulo='Canal teórico'+(conteudo.tema?' — '+conteudo.tema:'');
   if(tipo==='ATA') d.titulo='Ata — '+(conteudo.tipo_reuniao||'Reunião de preceptores')+(conteudo.tipo_reuniao==='Reunião de equipe'&&conteudo.equipe?' ('+conteudo.equipe+')':'')+' — '+dataBr(d.data);
   return {d:d, campos:campos};
 }
