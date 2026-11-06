@@ -477,6 +477,7 @@ table.tab-aud,table.tab-vigi{width:100%;border-collapse:collapse;font-size:.86re
 .oc{display:inline-block;border-radius:999px;padding:1px 8px;font-size:.72rem;font-weight:700;background:#f6e0db;color:#a33b2b}.oc-atraso,.oc-saida_antecipada{background:#f8ecd2;color:#9a6a12}
 .ata-ant{border-left:5px solid #a85b5b;background:#fffaf6}.ata-ant summary{cursor:pointer;list-style:revert}.ata-h{margin:10px 0 6px;font-size:.92rem;color:#a85b5b}
 #vpBox .kpi small{display:block;margin-top:4px;line-height:1.35}
+.hora-trava{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#f6f0e8;border:1px solid var(--bd);border-radius:12px;padding:10px 14px;margin:4px 0 8px}.hora-trava>div{flex:1;min-width:200px}.ht-ic{font-size:1.4rem}
 /* Termo e guia */
 .termo{max-height:46vh;overflow:auto;border:1px solid var(--bd);border-radius:12px;padding:6px 14px;background:#fbf8f4;font-size:.9rem;line-height:1.5}
 .termo h3{font-size:.95rem;margin:12px 0 4px}.termo ul{padding-left:18px;margin:4px 0}
@@ -807,7 +808,7 @@ const FORMS = {
     {tipo:'bloco', label:'Período', orient:'Registre <b>apenas números</b>. Não escreva nomes, CNS ou endereços de pacientes: a lista nominal fica no PEC e na planilha da equipe.'},
     {id:'situacao', label:'Como foi o período de vigilância?', tipo:'chips', opcoes:['Realizado','Parcial','Cancelado'], padrao:'Realizado', obrig:true},
     {id:'motivo', label:'Motivo (parcial ou cancelado)', tipo:'select', opcoes:['Demanda espontânea / cobertura do acolhimento','Falta de profissional na equipe','Reunião ou atividade não programada','Problema de sistema (PEC/internet)','Outro'], mostrarSe:['situacao',['Parcial','Cancelado']]},
-    {id:'horas', label:'Horas dedicadas à vigilância', tipo:'num', passo:'0.5', obrig:true, padrao:'2', mostrarSe:['situacao',['Realizado','Parcial']], ajuda:'Ex.: 2 para um turno de 2 horas; 1,5 se parte do tempo foi usada em outra demanda.'},
+    {tipo:'bloco', label:'Horas do período', mostrarSe:['situacao',['Realizado','Parcial']], orient:'As horas são calculadas automaticamente pelo início (quando este registro foi aberto) e pelo fim (quando você clicar em Registrar). Abra o registro ao começar o período e registre ao terminar.'},
     {id:'equipe', label:'Equipe', tipo:'select', opcoes:['ESF 59 – Ipê Rosa','ESF 60 – Ipê Amarelo','ESF 61 – Ipê Branco','eMulti','Toda a UBS'], obrig:true},
     {id:'indicador', label:'Indicador ou foco trabalhado', tipo:'select', opcoes:['C2','C3','C4','C5','C6','C7','Notificação / investigação de agravo','Busca ativa de faltosos','Outro'], obrig:true, ajuda:'C2 Desenvolvimento infantil · C3 Gestação e puerpério · C4 Diabetes · C5 Hipertensão · C6 Pessoa idosa · C7 Prevenção do câncer.'},
     {tipo:'bloco', label:'Produção (somente números)', mostrarSe:['situacao',['Realizado','Parcial']]},
@@ -1364,7 +1365,7 @@ function cardReg(r){
   return '<div class="card reg '+(ab?'click':'')+'" style="'+estiloCor(r.tipo)+'" '+(ab?'onclick="ir(\'doc\',{id:\''+r.id+'\'})"':'')+'>'+
     '<div class="reg-top"><span class="tipo">'+esc(S.tipos[r.tipo].nome)+'</span>'+chip(r.status)+'</div>'+
     '<div class="reg-tit">'+esc(r.titulo)+'</div>'+
-    '<div class="reg-meta">'+dataBr(r.data)+(r.hora?' · '+esc(r.hora):'')+' · '+esc(pessoas)+(r.assinaturas.length?' · '+nAss+'/'+r.assinaturas.length+' assinaturas':'')+'</div>'+
+    '<div class="reg-meta">'+dataBr(r.data)+(r.inicio?' · '+hmsDe(r.inicio)+(r.fim?'–'+hmsDe(r.fim)+' ('+duracaoTxt(r.duracao_min)+')':' · em andamento'):(r.hora?' · '+esc(r.hora):''))+' · '+esc(pessoas)+(r.assinaturas.length?' · '+nAss+'/'+r.assinaturas.length+' assinaturas':'')+'</div>'+
     (r.tipo==='PI' ? '<div class="met"><div class="lin"><span>Preenchimento</span><b>'+r.progresso+'%</b></div>'+barra(r.progresso)+'</div>' : '')+
     (r.tipo==='PI' && (r.compartilhado||[]).length ? '<div class="mut sm" style="margin-top:6px">👥 Compartilhado: '+esc([r.autor].concat(r.compartilhado_nomes||[]).join(', '))+(r.editor?' · última alteração por '+esc(r.editor.split(' ')[0])+(r.atualizado_em?' em '+dataHoraBr(r.atualizado_em):''):'')+'</div>' : '')+
     (minhaPendencia(r) ? '<div class="alerta">Aguardando sua assinatura</div>' : '')+
@@ -1925,6 +1926,12 @@ async function vEditar(p){
       (meus.length?'<optgroup label="Meus residentes">'+meus.map(op).join('')+'</optgroup>':'')+
       (outros.length?'<optgroup label="Demais residentes da unidade">'+outros.map(op).join('')+'</optgroup>':'')+'</select><div class="mut sm" id="catInfo"></div></div>';
   }
+  if(TRAVADOS.indexOf(tipo)>-1){
+    if(!p.id){ try{ const t=await call('iniciarAtividade',{tipo:tipo},true); S.edit.inicioTk=t.tk; r.inicio=t.inicio; r.data=t.inicio.slice(0,10); r.hora=t.inicio.slice(11,16); }catch(e){ toast('Não foi possível registrar o início pelo servidor. Verifique a conexão.','err'); return voltar(); } }
+    S.edit.inicio=r.inicio||''; S.edit.fim=r.fim||'';
+    h+='<input type="hidden" id="f__data" value="'+esc(r.data)+'"><input type="hidden" id="f__hora" value="'+esc(r.hora||'')+'">'+
+      '<div class="hora-trava" id="hTrava">'+horaTravaHTML()+'</div>'+(F.semana?'<div class="mut sm" id="seInfo"></div>':'');
+  } else
   h+='<div class="row2"><div class="fld"><label class="lbl" for="f__data">'+(F.alvo?'Data de realização da atividade':'Data')+' <span class="req">*</span></label><input type="date" id="f__data" max="'+hoje()+'" value="'+esc(r.data)+'">'+(F.semana?'<div class="mut sm" id="seInfo"></div>':'')+'</div>'+
      '<div class="fld"><label class="lbl" for="f__hora">Horário</label><input type="time" id="f__hora" value="'+esc(r.hora||'')+'"></div></div>';
   if(tipo==='ATA') h+='</div><div id="ataAnt" class="no-print"></div><div class="card" style="display:none">';
@@ -1967,8 +1974,28 @@ async function vEditar(p){
     res.addEventListener('change',()=>{ Object.keys(DEF).forEach(k=>{ const c=DEF[k]; if(c.tipo==='escala'&&c.porCategoria){ const v=lerCampo(c); $('#w_'+c.id).outerHTML=escalaHTML(c,v); } }); atualizarEscalas(); info(); });
     info(); }
   if(F.semana){ const se=()=>{ $('#seInfo').textContent=semanaEpi(val('f__data')); }; $('#f__data').addEventListener('change',se); se(); }
+  if($('#durViva')){ const min=(Date.now()-new Date(S.edit.inicio.replace(' ','T')).getTime())/60000; $('#durViva').textContent='em andamento há '+duracaoTxt(min); }
   if(tipo==='ATA'){ S.ataAnt=null; carregarAtasAnteriores(); vw.addEventListener('change',e=>{ if(e.target && /f_tipo_reuniao|f_equipe/.test(e.target.name||e.target.id||'')) carregarAtasAnteriores(); }); }
 }
+/* ---------- Horário travado: início e fim marcados pelo servidor ---------- */
+const TRAVADOS=['FEEDBACK','PDI','PRONTUARIO','ATA','CANAL','TEORICO','SUPERVISAO','VIGI'];
+function hmsDe(t){ return t?String(t).slice(11,16):''; }
+function duracaoTxt(min){ min=Math.max(0,Math.round(Number(min)||0)); const h=Math.floor(min/60), m=min%60; return h?h+'h'+String(m).padStart(2,'0'):m+' min'; }
+function horaTravaHTML(){
+  const E=S.edit;
+  if(!E.inicio) return '<span class="ht-ic">🔒</span><div><b>Data e horário do registro</b><br><span class="mut sm">'+esc(dataBr(val('f__data')||''))+' '+esc(val('f__hora')||'')+' · registro anterior à marcação automática</span></div>';
+  const fim=E.fim, dur=fim?(new Date(fim.replace(' ','T'))-new Date(E.inicio.replace(' ','T')))/60000:null;
+  return '<span class="ht-ic">⏱️</span><div><b>Início: '+dataBr(E.inicio.slice(0,10))+' às '+hmsDe(E.inicio)+'</b>'+(fim?' · <b>Fim: '+hmsDe(fim)+'</b> · duração '+duracaoTxt(dur):' · <span id="durViva" class="mut"></span>')+
+    '<br><span class="mut sm">Horário do servidor, sem ajuste manual. '+(fim?'O registro já foi finalizado.':'O fim é marcado automaticamente quando você enviar ou registrar.')+'</span></div>'+
+    (!fim && !E.id?'<button type="button" class="btn sm" onclick="recomecarInicio()" title="Use se abriu o registro antes de a atividade começar">Começar a contar agora</button>':'');
+}
+async function recomecarInicio(){
+  try{ const t=await call('iniciarAtividade',{tipo:S.edit.tipo},true); S.edit.inicioTk=t.tk; S.edit.inicio=t.inicio;
+    $('#f__data').value=t.inicio.slice(0,10); $('#f__hora').value=t.inicio.slice(11,16); $('#hTrava').innerHTML=horaTravaHTML(); toast('Início marcado às '+hmsDe(t.inicio)+'.','ok'); }catch(e){}
+}
+setInterval(()=>{ const el=document.getElementById('durViva'); if(!el||!S.edit||!S.edit.inicio||S.edit.fim) return;
+  const min=(Date.now()+(S.offsetServ||0)-new Date(S.edit.inicio.replace(' ','T')).getTime())/60000; el.textContent='em andamento há '+duracaoTxt(min); }, 15000);
+
 /* ---------- Ata: consulta às atas anteriores ---------- */
 async function carregarAtasAnteriores(){
   const box=$('#ataAnt'); if(!box) return;
@@ -2053,6 +2080,7 @@ function coletar(){
   campos.forEach(c=>{ if(!DEF[c.id]) DEF[c.id]=c; });
   const conteudo={}; campos.forEach(c=>{ const v=lerCampo(c); if(v!==undefined) conteudo[c.id]=v; });
   const d={tipo:tipo, id:S.edit.id, data:val('f__data'), hora:val('f__hora'), conteudo:conteudo};
+  if(S.edit.inicioTk && !S.edit.id) d.inicioTk=S.edit.inicioTk;
   if(S.tipos[tipo].residente) d.residente_id=val('f__res');
   if(F.participantes) d.participantes=lerCampo({id:'_part', tipo:'multi'});
   if(F.semana) conteudo._semana=semanaEpi(d.data);
@@ -2210,6 +2238,7 @@ async function vDoc(p){
     '<div class="meta-grid"><div><span>'+(r.tipo==='ATA'?'Relator(a)':r.tipo==='SUPERVISAO'?'Supervisor(a) responsável':r.tipo==='META4'?'Responsável pelo envio':'Preceptor(a) / autor(a)')+'</span><b>'+esc(r.tipo==='META4'?(C.responsavel||r.autor):r.autor)+(r.tipo==='META4'&&r.autor_id==='publico'?' <span class="tag">formulário público</span>':'')+'</b></div>'+
     (r.residente?'<div><span>'+(r.tipo==='SUPERVISAO'?'Preceptor(a)':'Residente')+'</span><b>'+esc(r.residente)+(resUser&&resUser.categoria?' · '+esc(resUser.categoria):'')+'</b></div>':'')+
     '<div><span>Data</span><b>'+dataBr(r.data)+(r.hora?' · '+esc(r.hora):'')+'</b></div>'+
+    (r.inicio?'<div><span>Início e fim (horário do servidor)</span><b>'+hmsDe(r.inicio)+(r.fim?' – '+hmsDe(r.fim)+' · '+duracaoTxt(r.duracao_min):' · em andamento')+'</b></div>':'')+
     (C._semana?'<div><span>Semana epidemiológica</span><b>'+esc(C._semana)+'</b></div>':'')+
     (r.tipo==='PI'?'<div><span>Preenchimento</span><b>'+r.progresso+'%</b></div>':'')+
     (r.tipo==='PI'&&(r.compartilhado||[]).length?'<div><span>Coautoria</span><b>'+esc((r.compartilhado_nomes||[]).join(', '))+'</b></div>':'')+
