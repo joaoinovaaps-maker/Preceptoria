@@ -478,6 +478,15 @@ table.tab-aud,table.tab-vigi{width:100%;border-collapse:collapse;font-size:.86re
 .ata-ant{border-left:5px solid #a85b5b;background:#fffaf6}.ata-ant summary{cursor:pointer;list-style:revert}.ata-h{margin:10px 0 6px;font-size:.92rem;color:#a85b5b}
 #vpBox .kpi small{display:block;margin-top:4px;line-height:1.35}
 .hora-trava{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#f6f0e8;border:1px solid var(--bd);border-radius:12px;padding:10px 14px;margin:4px 0 8px}.hora-trava>div{flex:1;min-width:200px}.ht-ic{font-size:1.4rem}
+.elo-marca{text-align:center;margin:6px 0 6px}.elo-nome{display:block;font-size:2rem;font-weight:800;letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.elo-sub{display:block;font-size:.86rem;font-weight:600;color:var(--pri);margin-top:2px}
+.atalhos-ini{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
+.card.agora{padding:4px 0;border-left:5px solid #c9932f}.ag-i{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px dashed var(--bd);font-size:.92rem}.ag-i:last-child{border-bottom:0}
+.ag-i.click{cursor:pointer}.ag-i.click:hover{background:#faf6f1}.ag-ir{color:var(--pri);font-weight:700;white-space:nowrap;font-size:.85rem}
+.busca-mob{display:none}
+.n-grp{margin:12px 0 6px;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.nota-obr{margin:-4px 0 12px;font-size:.82rem;color:var(--mut)}.nota-obr .req{color:var(--pri)}
+@media (max-width:700px){.busca-top{display:none;position:absolute;left:8px;right:8px;top:62px;max-width:none;margin:0;z-index:30}.busca-top.aberta{display:flex}.busca-top input{background:#fff;box-shadow:0 8px 24px rgba(60,40,25,.18);font-size:1rem;padding:12px 12px 12px 38px}.busca-mob{display:grid}}
 /* Termo e guia */
 .termo{max-height:46vh;overflow:auto;border:1px solid var(--bd);border-radius:12px;padding:6px 14px;background:#fbf8f4;font-size:.9rem;line-height:1.5}
 .termo h3{font-size:.95rem;margin:12px 0 4px}.termo ul{padding-left:18px;margin:4px 0}
@@ -1153,8 +1162,8 @@ function inicioNormal(){
 function telaLogin(){
   $('#app').innerHTML =
    '<div class="login"><div class="card" id="fLogin">'+
-   (faixaLogos()||marca())+'<h1>Elo APS</h1><p class="sm" style="margin:-4px 0 6px;color:var(--pri);font-weight:600">Ensino e serviço na Atenção Primária · Dourados-MS</p>'+
-   '<p class="mut sm">'+esc(S.programa)+' · Fiocruz / SEMS Dourados-MS</p>'+
+   (faixaLogos()||marca())+'<div class="elo-marca"><span class="elo-nome">Elo APS</span><span class="elo-sub">Ensino e serviço na Atenção Primária · Dourados&#8209;MS</span></div>'+
+   '<p class="mut sm" style="text-align:center;margin:0 0 14px">'+esc(S.programa)+' · Fiocruz / SEMS</p>'+
    '<div class="fld"><label class="lbl" for="lgU">Usuário</label><input type="text" id="lgU" autocomplete="username" autocapitalize="none"></div>'+
    '<div class="fld"><label class="lbl" for="lgS">Senha</label><input type="password" id="lgS" autocomplete="current-password"></div>'+
    '<p class="mut sm" style="margin:2px 0 4px">🔒 Por segurança, a sessão é encerrada após 1 hora sem uso.</p>'+
@@ -1296,7 +1305,8 @@ function montarShell(){
    '<div class="side-bg" onclick="menuLateral(false)"></div>'+
    '<div class="conteudo"><header class="top no-print"><div class="top-tit"><button class="icon hamb" title="Menu" onclick="menuLateral(true)">'+svg('menu')+'</button><span id="topTit">Início</span></div>'+
    (S.servNovo?'':'<span class="busca-off"></span>')+'<form class="busca-top'+(S.servNovo?'':' hidden')+'" onsubmit="event.preventDefault();const q=this.q.value.trim(); if(q) ir(\'busca\',{q:q});"><span class="ic-b">'+svg('busca')+'</span><input name="q" type="search" placeholder="Buscar documento, residente ou projeto" autocomplete="off" aria-label="Buscar"></form>'+
-   '<div class="acts"><button class="icon" title="Notificações" onclick="abrirNotif()">'+ICON_SINO+'<span id="badge" class="badge hidden"></span></button>'+
+   '<div class="acts">'+(S.servNovo?'<button class="icon busca-mob" title="Buscar" onclick="document.querySelector(\'.busca-top\').classList.toggle(\'aberta\');const i=document.querySelector(\'.busca-top input\'); if(i) i.focus();">'+svg('busca')+'</button>':'')+
+   '<button class="icon" title="Ajuda: guia rápido" onclick="abrirGuia()"><b style="font-size:1.05rem">?</b></button><button class="icon" title="Notificações" onclick="abrirNotif()">'+ICON_SINO+'<span id="badge" class="badge hidden"></span></button>'+
    '<button class="icon" title="Minha conta" onclick="menuConta()">'+ICON_USER+'</button></div></header>'+
    '<main id="view"></main></div></div>';
   pintarBadge();
@@ -1348,7 +1358,9 @@ async function abrirNotif(){
   abrirModal('<h2>Notificações</h2><div id="nl"><div class="vazio">Carregando…</div></div><div class="m-acoes"><button class="btn" onclick="fecharModal()">Fechar</button></div>');
   let l=[]; try{ l=await call('notificacoes'); }catch(e){ return; }
   const box=$('#nl'); if(!box) return;
-  box.innerHTML = l.length ? l.map(n=>'<div class="notif '+(n.lembrete?'lemb ':'')+(n.lida?'':'nl')+'" '+(n.registro_id?'onclick="fecharModal();ir(\'doc\',{id:\''+esc(n.registro_id)+'\'})"':'')+'>'+esc(n.mensagem)+'<small>'+dataHoraBr(n.criado_em)+'</small></div>').join('') : '<div class="vazio">Nenhuma notificação.</div>';
+  const item=n=>'<div class="notif '+(n.lembrete?'lemb ':'')+(n.lida?'':'nl')+'" '+acaoLembrete(n,true)+'>'+esc(n.mensagem)+(n.lembrete?'':'<small>'+dataHoraBr(n.criado_em)+'</small>')+'</div>';
+  const lem=l.filter(n=>n.lembrete), out=l.filter(n=>!n.lembrete);
+  box.innerHTML = l.length ? (lem.length?'<p class="n-grp">Para fazer</p>'+lem.map(item).join(''):'')+(out.length?'<p class="n-grp">Avisos</p>'+out.map(item).join(''):'') : '<div class="vazio">Nenhuma notificação.</div>';
   if(l.some(n=>!n.lida && !n.lembrete)){ call('marcarLidas',{},true).then(()=>{ S.naoLidas=l.filter(n=>n.lembrete).length; pintarBadge(); }).catch(()=>{}); }
 }
 
@@ -1381,18 +1393,30 @@ function cardReg(r){
 }
 function listaCards(arr, vazio){ return arr.length ? arr.map(cardReg).join('') : '<div class="card vazio">'+esc(vazio)+'</div>'; }
 
+function acaoLembrete(n,modal){ const f=modal?'fecharModal();':'';
+  if(n.registro_id) return 'onclick="'+f+'ir(\'doc\',{id:\''+esc(n.registro_id)+'\'})"';
+  if(/^fb_/.test(n.id||'') || /feedback semanal/i.test(n.mensagem||'')) return 'onclick="'+f+'ir(\'editar\',{tipo:\'FEEDBACK\'})"';
+  return ''; }
+/* Início: lembretes do sino em destaque ("Para fazer agora") */
+async function paraFazerAgora(){
+  const box=$('#agora'); if(!box) return;
+  let l=[]; try{ l=await call('notificacoes',{},true); }catch(e){ return; }
+  const lem=l.filter(n=>n.lembrete); if(!lem.length || !$('#agora')) return;
+  box.innerHTML='<h3 class="sec-t">Para fazer agora</h3><div class="card agora">'+lem.map(n=>{ const a=acaoLembrete(n,false); return '<div class="ag-i'+(a?' click':'')+'" '+a+'>'+esc(n.mensagem)+(a?'<span class="ag-ir">'+(n.registro_id?'Abrir':'Registrar')+' →</span>':'')+'</div>'; }).join('')+'</div>';
+}
 async function vInicio(){
   const primeiro=S.eu.nome.split(' ')[0];
   const atalhos=menuVisivel().filter(m=>m.id!=='inicio').map(m=>'<button class="tile" style="'+estiloCor(m.id)+'" onclick="ir(\''+m.id+'\')">'+bolha(m.id)+'<b>'+esc(m.nome)+'</b><small>'+esc(m.d||'')+'</small></button>')
     .concat(LINKS_EXTERNOS.map(l=>'<a class="tile" style="'+estiloCor(l.id)+'" href="'+l.url+'" target="_blank" rel="noopener">'+bolha(l.id)+'<b>'+esc(l.nome)+' ↗</b><small>'+esc(l.d)+'</small></a>')).join('');
   view('<div class="hero"><div><h1>Olá, '+esc(primeiro)+'!</h1><p>'+esc(PERFIL_NOME[S.eu.perfil])+' · '+esc(S.eu.unidade||'')+' · '+mesBr(mesAtual())+'</p></div></div>'+
-    '<div id="ini"><div class="vazio">Carregando…</div></div><h3 class="sec-t">Acesso rápido</h3><div class="tiles">'+atalhos+'</div>');
+    '<div id="agora"></div><div id="ini"><div class="vazio">Carregando…</div></div><h3 class="sec-t">Acesso rápido</h3><div class="tiles">'+atalhos+'</div>');
+  if(S.servNovo) paraFazerAgora();
   let regs=[]; try{ regs=await call('listar',{}); }catch(e){ return; }
   const box=$('#ini'); if(!box) return;
   const pend=regs.filter(minhaPendencia);
   let h='<h3 class="sec-t">Pendências de assinatura</h3>'+listaCards(pend,'Nenhum documento aguardando sua assinatura.');
 
-  const atalho='<p style="margin:4px 0 14px"><button class="btn" onclick="ir(\'editar\',{tipo:\'META4\'})">+ Registrar atividade da Meta 4</button></p>';
+  const atalho='<div class="atalhos-ini"><button class="btn" onclick="ir(\'editar\',{tipo:\'META4\'})">📷 Registrar atividade da Meta 4</button>'+(S.servNovo&&S.tipos.VIGI&&['residente','preceptor'].indexOf(S.eu.perfil)>-1?'<button class="btn" onclick="ir(\'editar\',{tipo:\'VIGI\'})">📈 Registrar período de vigilância</button>':'')+'</div>';
   if(S.eu.perfil==='colaborador'){
     box.innerHTML=atalho+'<h3 class="sec-t">Meus registros da Meta 4</h3>'+listaCards(regs.filter(r=>r.tipo==='META4').slice(0,15),'Nenhuma atividade registrada ainda.'); return;
   }
@@ -1500,6 +1524,10 @@ async function vBusca(p){
 }
 
 /* ======================= AUDITORIA ======================= */
+const ST_NOME={rascunho:'rascunho',aguardando:'enviado para assinatura',assinado:'assinado',registrado:'registrado',em_andamento:'em andamento',concluido:'concluído'};
+function audDesc(x){ const m=/^salvar_([A-Z0-9]+)$/.exec(x.acao); if(m && S.tipos[m[1]]) return 'Salvou: '+S.tipos[m[1]].nome; return x.descricao; }
+function audDet(t){ t=String(t||'').replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,'').trim();
+  t=t.replace(/^\((\w+)\)$/,(a,b)=>ST_NOME[b]||b).replace(/\((\w+)\)/g,(a,b)=>ST_NOME[b]?'('+ST_NOME[b]+')':a); return t; }
 async function vAuditoria(){
   if(['supervisor','admin'].indexOf(S.eu.perfil)===-1) return ir('inicio');
   S.aud=S.aud||{de:primeiroDia(), ate:hoje(), q:'', acao:''};
@@ -1512,7 +1540,7 @@ async function vAuditoria(){
     let r; try{ r=await call('auditoria',S.aud); }catch(e){ return; } S.audRes=r.linhas;
     const box=$('#aRes'); if(!box) return;
     box.innerHTML='<p class="mut sm">'+r.total+' registro(s)'+(r.total>=1500?' (limite de 1.500; refine os filtros)':'')+'</p>'+(r.linhas.length?'<div class="card" style="padding:0;overflow-x:auto"><table class="tab-aud"><thead><tr><th>Quando</th><th>Quem</th><th>O quê</th><th>Detalhe</th></tr></thead><tbody>'+
-      r.linhas.map(x=>'<tr class="ac-'+esc(x.acao.split('_')[0])+'"><td>'+esc(dataHoraBr(x.quando))+'</td><td>'+esc(x.usuario)+'</td><td>'+esc(x.descricao)+'</td><td class="mut">'+esc(x.detalhe)+'</td></tr>').join('')+'</tbody></table></div>':'<div class="card vazio">Nenhum registro no período.</div>'); };
+      r.linhas.map(x=>'<tr class="ac-'+esc(x.acao.split('_')[0])+'"><td>'+esc(dataHoraBr(x.quando))+'</td><td>'+esc(x.usuario)+'</td><td>'+esc(audDesc(x))+'</td><td class="mut">'+esc(audDet(x.detalhe))+'</td></tr>').join('')+'</tbody></table></div>':'<div class="card vazio">Nenhum registro no período.</div>'); };
   $('#aOk').onclick=carregar; $('#aQ').onkeydown=e=>{ if(e.key==='Enter') carregar(); };
   $('#aCsv').onclick=()=>{ const L=S.audRes||[]; if(!L.length) return toast('Nada para exportar.','err');
     const q=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
@@ -1549,16 +1577,18 @@ async function vLista(tipo){
   if(S.filtros[tipo]===undefined) S.filtros[tipo] = porMes ? mesAtual() : '';
   view('<div class="pg-head"><div class="pg-tit">'+bolha(tipo)+'<div><h1>'+esc(S.tipos[tipo].nome)+'</h1><p class="mut sm">'+esc(DESCR[tipo])+'</p></div></div>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap">'+(tipo==='VIGI'?'<button class="btn" onclick="ir(\'vigipainel\')">Painel da vigilância</button>':'')+(tipo==='META4'&&GESTAO.indexOf(S.eu.perfil)>-1?'<button class="btn" onclick="ir(\'meta4rel\')">Gerar relatório</button>':'')+(podeCriar?'<button class="btn pri" onclick="ir(\'editar\',{tipo:\''+tipo+'\'})">+ Novo registro</button>':'')+'</div></div>'+
-    '<div class="filtros"><label>Mês<input type="month" id="fMes" value="'+S.filtros[tipo]+'"></label>'+
-    '<button class="btn sm" id="fTodos">Todos os meses</button></div><div id="lista"><div class="vazio">Carregando…</div></div>');
-  $('#fMes').onchange=e=>{ S.filtros[tipo]=e.target.value; carregarLista(tipo); };
-  $('#fTodos').onclick=()=>{ S.filtros[tipo]=''; $('#fMes').value=''; carregarLista(tipo); };
+    (porMes?'<div class="filtros"><label>Mês<input type="month" id="fMes" value="'+S.filtros[tipo]+'"></label>'+
+    '<button class="btn sm" id="fTodos">Todos os meses</button></div>':'')+'<div id="lista"><div class="vazio">Carregando…</div></div>');
+  if(porMes){ $('#fMes').onchange=e=>{ S.filtros[tipo]=e.target.value; carregarLista(tipo); };
+    $('#fTodos').onclick=()=>{ S.filtros[tipo]=''; $('#fMes').value=''; carregarLista(tipo); }; }
   carregarLista(tipo);
 }
 async function carregarLista(tipo){
   let l=[]; try{ l=await call('listar',{tipo:tipo, mes:S.filtros[tipo]}); }catch(e){ return; }
   const box=$('#lista'); if(!box) return;
-  box.innerHTML = '<p class="mut sm">'+l.length+' registro(s) · '+mesBr(S.filtros[tipo])+'</p>'+listaCards(l,'Nenhum registro encontrado neste período.');
+  const podeCriar=(S.tipos[tipo].autores||AUTORES).indexOf(S.eu.perfil)>-1;
+  box.innerHTML = l.length ? '<p class="mut sm">'+l.length+' registro(s) · '+(S.filtros[tipo]?mesBr(S.filtros[tipo]):'todos os meses')+'</p>'+listaCards(l,'')
+    : '<div class="card vazio">Nenhum registro '+(S.filtros[tipo]?'em '+mesBr(S.filtros[tipo]):'ainda')+'.'+(podeCriar?'<p style="margin:12px 0 0"><button class="btn pri" onclick="ir(\'editar\',{tipo:\''+tipo+'\'})">+ Criar o primeiro registro</button></p>':'')+(S.filtros[tipo]?'<p class="sm" style="margin:8px 0 0"><a href="#" onclick="S.filtros[\''+tipo+'\']=\'\';vLista(\''+tipo+'\');return false">Ver todos os meses</a></p>':'')+'</div>';
 }
 
 /* ======================= CAMPOS (EDIÇÃO E LEITURA) ======================= */
@@ -1920,7 +1950,7 @@ async function vEditar(p){
     S.edit.souAutor=!p.id || r.souAutor!==false; S.edit.autor=r.autor||S.eu.nome; S.edit.editor=r.editor||''; S.edit.atualizado=r.atualizado_em||''; }
   Object.keys(DEF).forEach(k=>delete DEF[k]); Object.keys(ANEXOS).forEach(k=>delete ANEXOS[k]);
 
-  let h='<div class="pg-head"><div><h1>'+(p.id?'Editar':'Novo')+' · '+esc(T.nome)+'</h1><p class="mut sm">'+esc(DESCR[tipo])+'</p></div></div><div class="card">';
+  let h='<div class="pg-head"><div><h1>'+(p.id?'Editar':'Novo')+' · '+esc(T.nome)+'</h1><p class="mut sm">'+esc(DESCR[tipo])+'</p></div></div><p class="nota-obr">Campos marcados com <span class="req">*</span> são obrigatórios.</p><div class="card">';
   if(T.residente && F.alvo==='preceptor'){
     const op=u=>'<option value="'+u.id+'"'+(u.id===r.residente_id?' selected':'')+'>'+esc(u.nome)+(u.categoria?' — '+esc(u.categoria):'')+'</option>';
     h+='<div class="row2"><div class="fld"><span class="lbl">Supervisor(a) responsável</span><div class="auto">'+esc(S.eu.nome)+'</div></div><div class="fld"><span class="lbl">Unidade de vinculação</span><div class="auto">'+esc(S.eu.unidade)+'</div></div></div>'+
@@ -2005,7 +2035,7 @@ setInterval(()=>{ const el=document.getElementById('durViva'); if(!el||!S.edit||
 
 /* ---------- Ata: consulta às atas anteriores ---------- */
 async function carregarAtasAnteriores(){
-  const box=$('#ataAnt'); if(!box) return;
+  const box=$('#ataAnt'); if(!box || !S.servNovo) return;
   const d={tipo_reuniao:lerCampo(DEF.tipo_reuniao)||'Reunião de preceptores', equipe:DEF.equipe?lerCampo(DEF.equipe):'', id:S.edit.id||'', antesDe:val('f__data')||hoje()};
   box.innerHTML='<div class="card ata-ant"><b>Atas anteriores</b><p class="mut sm">Carregando…</p></div>';
   let L=[]; try{ L=await call('atasAnteriores',d,true); }catch(e){ box.innerHTML=''; return; }
@@ -2400,7 +2430,7 @@ async function vPainel(){
   S.pMes = S.pMes || mesAtual(); S.pUn = S.pUn || S.eu.unidade;
   const unSel = S.eu.perfil==='admin' && S.config.unidades && S.config.unidades.length>1
     ? '<label>Unidade<select id="pUn">'+S.config.unidades.map(u=>'<option'+(u===S.pUn?' selected':'')+'>'+esc(u)+'</option>').join('')+'</select></label>' : '';
-  view(faixaLogos('esq')+'<div class="pg-head"><div><h1>Painel mensal da preceptoria</h1><p class="mut sm">Cumprimento das atividades pedagógicas protegidas por preceptor.</p></div>'+
+  view('<div class="pg-head"><div><h1>Painel mensal da preceptoria</h1><p class="mut sm">Cumprimento das atividades pedagógicas protegidas por preceptor.</p></div>'+
     '<button class="btn" id="pExp">Gerar aba na planilha</button></div>'+
     '<div class="filtros"><label>Mês<input type="month" id="pMes" value="'+S.pMes+'"></label>'+unSel+'</div><div id="pn"><div class="vazio">Carregando…</div></div><div id="pVigi"></div>');
   $('#pMes').onchange=e=>{ S.pMes=e.target.value||mesAtual(); carregarPainel(); };
