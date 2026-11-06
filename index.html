@@ -785,7 +785,14 @@ const FORMS = {
 ]},
     {grupo:"Etapa 3 · Entender", titulo:"Diagnóstico situacional", guia:"<p>Antes de agir, é preciso demonstrar qual é o problema real.</p>\n<h4>O que é esperado</h4>\n<ul>\n<li><b>Problema central:</b> definição clara e específica do que será enfrentado. Ex.: “Baixa adesão à vacinação infantil na área da ESF X”.</li>\n<li><b>Coleta de dados:</b> como o problema foi identificado, combinando as fontes abaixo.</li>\n</ul>\n<div class=\"mini\">\n<div><b>Dados epidemiológicos</b>Indicadores oficiais e séries históricas do território.</div>\n<div><b>Questionários</b>Instrumentos aplicados à população ou à equipe.</div>\n<div><b>Observação direta</b>Vivência da rotina do serviço pela equipe.</div>\n<div><b>Prontuários</b>Registros clínicos e histórico de atendimentos.</div>\n</div>\n<div class=\"warn\"><b>Atenção.</b> O problema central deve ser comprovado por dados, não apenas por percepção. Registre a linha de base: ela será comparada ao resultado final.</div>", campos:[
       {id:'problema', label:'Problema central', tipo:'textarea', linhas:3, contar:true, ajuda:'Uma ou duas frases, específicas.', ph:'Ex.: Baixa cobertura de exame citopatológico em mulheres de 25 a 64 anos das ESF 59, 60 e 61.'},
-      {id:'dados', label:'Como o problema foi identificado (fontes, dados e linha de base)', tipo:'textarea', linhas:8, contar:true, ph:'Quais fontes foram usadas, em que período, quais números foram encontrados. Ex.: segundo o SISAB, no 2º quadrimestre de 2026 a cobertura foi de X% (linha de base).'}
+      {id:'dados', label:'Como o problema foi identificado (fontes, dados e linha de base)', tipo:'textarea', linhas:8, contar:true, ph:'Quais fontes foram usadas, em que período, quais números foram encontrados. Ex.: segundo o SISAB, no 2º quadrimestre de 2026 a cobertura foi de X% (linha de base).'},
+      {id:'usar_fofa', label:'Incluir matriz FOFA (SWOT) no diagnóstico?', tipo:'chips', opcoes:['Sim','Não'], padrao:'Não'},
+      {tipo:'bloco', label:'Matriz FOFA (SWOT)', mostrarSe:['usar_fofa','Sim'], orient:'<p><b>Matriz FOFA (SWOT)</b> organiza o diagnóstico em quatro quadrantes: o que está <b>dentro</b> da governabilidade da equipe (forças e fraquezas) e o que vem de <b>fora</b> (oportunidades e ameaças).</p><ul><li><b>Forças:</b> recursos e potencialidades internas que ajudam a enfrentar o problema (ex.: ACS com vínculo forte, residentes, agenda protegida).</li><li><b>Oportunidades:</b> fatores externos favoráveis (ex.: campanha municipal, programa federal, parceria com escola).</li><li><b>Fraquezas:</b> limitações internas (ex.: déficit de ACS, cadastro desatualizado, falta de fluxo).</li><li><b>Ameaças:</b> fatores externos desfavoráveis (ex.: falta de insumos na rede, sazonalidade, transporte).</li></ul><p>Escreva um item por linha. Depois, cruze os quadrantes: use as forças para aproveitar oportunidades e reduzir ameaças, e as oportunidades para superar fraquezas. Essas estratégias alimentam os objetivos e o plano de ação.</p>'},
+      {id:'fofa_forcas', label:'Forças (internas, positivas)', tipo:'textarea', linhas:4, mostrarSe:['usar_fofa','Sim'], ajuda:'Um item por linha.'},
+      {id:'fofa_fraquezas', label:'Fraquezas (internas, negativas)', tipo:'textarea', linhas:4, mostrarSe:['usar_fofa','Sim'], ajuda:'Um item por linha.'},
+      {id:'fofa_oportunidades', label:'Oportunidades (externas, positivas)', tipo:'textarea', linhas:4, mostrarSe:['usar_fofa','Sim'], ajuda:'Um item por linha.'},
+      {id:'fofa_ameacas', label:'Ameaças (externas, negativas)', tipo:'textarea', linhas:4, mostrarSe:['usar_fofa','Sim'], ajuda:'Um item por linha.'},
+      {id:'fofa_estrategias', label:'Estratégias a partir do cruzamento (opcional)', tipo:'textarea', linhas:4, mostrarSe:['usar_fofa','Sim'], ph:'Ex.: usar o vínculo dos ACS (força) para aproveitar a campanha municipal (oportunidade)…'}
 ]},
     {grupo:"Etapa 4 · Decidir", titulo:"Objetivos", guia:"<h4>O que é esperado</h4>\n<ul>\n<li><b>Objetivo geral:</b> o impacto principal pretendido a longo prazo. Deve ser único, amplo e alinhado ao problema central.</li>\n<li><b>Objetivos específicos:</b> pequenas metas que, somadas, levam ao objetivo geral. Cada um deve passar pelos quatro critérios:</li>\n</ul>\n<div class=\"mini\">\n<div><b>Realista</b>A equipe consegue cumpri-lo com os recursos disponíveis?</div>\n<div><b>Mensurável</b>Existe um número ou indicador para medi-lo?</div>\n<div><b>Com prazo</b>Sabemos até quando deve ser alcançado?</div>\n<div><b>Verificável</b>Há uma fonte de dados para comprovar o resultado?</div>\n</div>\n<div class=\"tip\"><b>Dica de redação.</b> Inicie cada objetivo com um verbo no infinitivo: ampliar, reduzir, implantar, capacitar.</div>", campos:[
       {id:'obj_geral', label:'Objetivo geral', tipo:'textarea', linhas:3, ph:'Ex.: Ampliar a cobertura de exame citopatológico nas mulheres de 25 a 64 anos adscritas à UBS.'},
@@ -794,9 +801,22 @@ const FORMS = {
     {grupo:"Etapa 5 · Decidir", titulo:"Fundamentação teórica", guia:"<p>Revisão de literatura: o que a ciência diz sobre o assunto e quais são as boas práticas recomendadas para esse tipo de problema.</p>\n<div class=\"mini\">\n<div><b>Ministério da Saúde</b>Protocolos clínicos, diretrizes terapêuticas e Cadernos de Atenção Básica.</div>\n<div><b>OMS</b>Diretrizes internacionais e recomendações baseadas em evidência.</div>\n<div><b>Artigos recentes</b>Estudos, revisões sistemáticas e publicações indexadas.</div>\n</div>\n<div class=\"tip\"><b>Dica.</b> Prefira as versões mais recentes das diretrizes e cite apenas o que foi consultado. Use o sistema autor-data, por exemplo (BRASIL, 2017) ou Mendes (2012). Toda obra citada aqui deve aparecer nas referências (etapa 10).</div>", campos:[
       {id:'fundamentacao', label:'Fundamentação teórica', tipo:'textarea', linhas:14, contar:true, ph:'Apresente os conceitos, as diretrizes e as evidências que sustentam a intervenção, com as citações no texto.'}
 ]},
-    {grupo:"Etapa 6 · Planejar", titulo:"Metodologia: plano de ação (5W2H)", guia:"<p>A parte mais importante do projeto: o “como fazer”. O 5W2H transforma cada ação em uma linha do plano, com responsável, prazo e recurso.</p>\n<div class=\"tablewrap\"><table class=\"ref\">\n<thead><tr><th>Elemento</th><th>Tradução</th><th>O que define</th></tr></thead>\n<tbody>\n<tr><td>What</td><td>O quê</td><td>Qual ação será realizada</td></tr>\n<tr><td>Why</td><td>Por quê</td><td>Justificativa da ação</td></tr>\n<tr><td>Where</td><td>Onde</td><td>Local de execução</td></tr>\n<tr><td>When</td><td>Quando</td><td>Prazo / cronograma</td></tr>\n<tr><td>Who</td><td>Quem</td><td>Responsável pela ação</td></tr>\n<tr><td>How</td><td>Como</td><td>Método de execução</td></tr>\n<tr><td>How much</td><td>Quanto custa</td><td>Recurso necessário</td></tr>\n</tbody>\n</table></div>\n<div class=\"tip\"><b>Dica.</b> Detalhe o “como” com fluxograma, procedimento operacional padrão (POP) e planilhas de apoio, para que qualquer profissional da equipe consiga executar a ação.</div>", campos:[
+    {grupo:"Etapa 6 · Planejar", titulo:"Metodologia", guia:"<p>A parte mais importante do projeto: o “como fazer”. Escolha a abordagem: <b>quantitativa</b> (plano de ação 5W2H, com metas e indicadores numéricos), <b>qualitativa</b> (entrevistas ou grupos focais, roteiro e checklist COREQ) ou <b>mista</b> (as duas). O 5W2H transforma cada ação em uma linha do plano, com responsável, prazo e recurso.</p>\n<div class=\"tablewrap\"><table class=\"ref\">\n<thead><tr><th>Elemento</th><th>Tradução</th><th>O que define</th></tr></thead>\n<tbody>\n<tr><td>What</td><td>O quê</td><td>Qual ação será realizada</td></tr>\n<tr><td>Why</td><td>Por quê</td><td>Justificativa da ação</td></tr>\n<tr><td>Where</td><td>Onde</td><td>Local de execução</td></tr>\n<tr><td>When</td><td>Quando</td><td>Prazo / cronograma</td></tr>\n<tr><td>Who</td><td>Quem</td><td>Responsável pela ação</td></tr>\n<tr><td>How</td><td>Como</td><td>Método de execução</td></tr>\n<tr><td>How much</td><td>Quanto custa</td><td>Recurso necessário</td></tr>\n</tbody>\n</table></div>\n<div class=\"tip\"><b>Dica.</b> Detalhe o “como” com fluxograma, procedimento operacional padrão (POP) e planilhas de apoio, para que qualquer profissional da equipe consiga executar a ação.</div>", campos:[
       {id:'metodologia', label:'Descrição metodológica', tipo:'textarea', linhas:7, contar:true, ajuda:'Tipo de intervenção, cenário, participantes, etapas e estratégias. Pode ser curta.', ph:'Trata-se de um projeto de intervenção desenvolvido na UBS…'},
-      {id:'acoes', label:'Plano de ação 5W2H', tipo:'cartoes', nome:'Ação', ajuda:'Cada cartão é uma linha do Quadro 1 no PDF.', campos:[['oque','O quê (ação)','ta','Ex.: Realizar busca ativa das mulheres em atraso'],['porque','Por quê','ta','Ex.: Baixa adesão ao rastreamento'],['onde','Onde','ta','Ex.: Território das ESF 59, 60 e 61'],['quando','Quando','in','Ex.: Até 30/11/2026'],['quem','Quem','in','Ex.: ACS e residentes de enfermagem'],['como','Como','ta','Ex.: Visita domiciliar com lista nominal extraída do PEC'],['quanto','Quanto','in','Ex.: Sem custo adicional']]}
+      {id:'abordagem', label:'Abordagem metodológica', tipo:'chips', opcoes:['Quantitativa','Qualitativa','Mista'], padrao:'Quantitativa', ajuda:'Quantitativa: plano 5W2H. Qualitativa: roteiro de entrevista e COREQ. Mista: as duas.'},
+      {id:'acoes', label:'Plano de ação 5W2H', tipo:'cartoes', nome:'Ação', mostrarSe:['abordagem',['','Quantitativa','Mista']], ajuda:'Cada cartão é uma linha do Quadro 1 no PDF.', campos:[['oque','O quê (ação)','ta','Ex.: Realizar busca ativa das mulheres em atraso'],['porque','Por quê','ta','Ex.: Baixa adesão ao rastreamento'],['onde','Onde','ta','Ex.: Território das ESF 59, 60 e 61'],['quando','Quando','in','Ex.: Até 30/11/2026'],['quem','Quem','in','Ex.: ACS e residentes de enfermagem'],['como','Como','ta','Ex.: Visita domiciliar com lista nominal extraída do PEC'],['quanto','Quanto','in','Ex.: Sem custo adicional']]},
+      {tipo:'bloco', label:'Pesquisa qualitativa: roteiro de entrevista', mostrarSe:['abordagem',['Qualitativa','Mista']], orient:"<h4>Como elaborar as perguntas da entrevista</h4><ol><li><b>Parta dos objetivos espec\u00edficos:</b> cada pergunta central deve ajudar a responder a um objetivo. Pergunta que n\u00e3o serve a nenhum objetivo sai do roteiro.</li><li><b>Fa\u00e7a perguntas abertas:</b> comece com \u201ccomo\u201d, \u201co que\u201d, \u201cconte-me sobre\u201d. Evite perguntas respondidas com sim ou n\u00e3o.</li><li><b>Uma ideia por pergunta</b> e linguagem do dia a dia, sem siglas nem termos t\u00e9cnicos.</li><li><b>Seja neutro:</b> n\u00e3o induza a resposta (evite \u201cVoc\u00ea n\u00e3o acha que\u2026?\u201d). Troque \u201cpor qu\u00ea?\u201d por \u201co que levou voc\u00ea a\u2026?\u201d, que soa menos como julgamento.</li><li><b>Organize em momentos:</b> abertura (acolhimento e perguntas f\u00e1ceis) \u2192 perguntas centrais (6 a 10) \u2192 aprofundamento \u2192 encerramento (\u201cGostaria de acrescentar algo?\u201d).</li><li><b>Prepare perguntas de apoio (sondagens):</b> \u201cPode me dar um exemplo?\u201d, \u201cComo foi isso para voc\u00ea?\u201d, \u201cO que aconteceu depois?\u201d.</li><li><b>Teste o roteiro</b> com 1 ou 2 pessoas (piloto) e ajuste. A dura\u00e7\u00e3o usual \u00e9 de 30 a 60 minutos.</li><li><b>Planeje registro e an\u00e1lise:</b> grava\u00e7\u00e3o com consentimento, transcri\u00e7\u00e3o, notas de campo e crit\u00e9rio de satura\u00e7\u00e3o (encerrar quando novas entrevistas n\u00e3o trouxerem informa\u00e7\u00f5es novas).</li></ol><div class=\"tip\"><b>Exemplo.</b> Objetivo: compreender as barreiras ao exame citopatol\u00f3gico. Pergunta central: \u201cConte-me como foi a \u00faltima vez que voc\u00ea pensou em fazer o preventivo.\u201d Apoio: \u201cO que facilitou? O que dificultou?\u201d</div><p><b>\u00c9tica:</b> registre o Termo de Consentimento Livre e Esclarecido (TCLE), o sigilo e o anonimato. Se houver finalidade de pesquisa, o projeto precisa ser apreciado por Comit\u00ea de \u00c9tica em Pesquisa (Resolu\u00e7\u00f5es CNS 466/2012 e 510/2016); confirme com a coordena\u00e7\u00e3o.</p>"},
+      {id:'quali_tecnica', label:'Técnica de coleta', tipo:'chipsm', opcoes:['Entrevista semiestruturada','Entrevista em profundidade','Grupo focal','Roda de conversa','Observação participante'], mostrarSe:['abordagem',['Qualitativa','Mista']]},
+      {id:'quali_participantes', label:'Participantes, seleção e saturação', tipo:'textarea', linhas:4, mostrarSe:['abordagem',['Qualitativa','Mista']], ph:'Quem será entrevistado, critérios de inclusão e exclusão, como serão convidados, número previsto e critério de saturação.'},
+      {id:'roteiro', label:'Roteiro de entrevista', tipo:'cartoes', nome:'Pergunta', mostrarSe:['abordagem',['Qualitativa','Mista']], ajuda:'Cada cartão é uma linha do quadro do roteiro no PDF.', campos:[['momento','Momento','sel',[['Abertura','Abertura'],['Central','Central'],['Aprofundamento','Aprofundamento'],['Encerramento','Encerramento']]],['pergunta','Pergunta','ta','Ex.: Conte-me como é, para você, o acesso aos atendimentos da unidade.'],['sondagem','Perguntas de apoio (sondagem)','ta','Ex.: Pode me dar um exemplo? O que aconteceu depois?'],['objetivo','Objetivo específico relacionado','in','Ex.: objetivo b']]},
+      {id:'quali_registro', label:'Registro dos dados', tipo:'textarea', linhas:3, mostrarSe:['abordagem',['Qualitativa','Mista']], ph:'Gravação (com consentimento), transcrição, notas de campo, local e duração prevista.'},
+      {id:'quali_analise', label:'Método de análise', tipo:'chips', opcoes:['Análise de conteúdo (Bardin)','Análise temática (Braun e Clarke)','Análise de discurso','Outro'], mostrarSe:['abordagem',['Qualitativa','Mista']]},
+      {id:'quali_analise_desc', label:'Como será feita a análise', tipo:'textarea', linhas:3, mostrarSe:['abordagem',['Qualitativa','Mista']], ph:'Etapas da análise, codificação, quem participa e uso de software (se houver).'},
+      {id:'quali_etica', label:'Aspectos éticos', tipo:'textarea', linhas:3, mostrarSe:['abordagem',['Qualitativa','Mista']], ph:'TCLE, sigilo, anonimato e, se houver finalidade de pesquisa, apreciação pelo CEP.'},
+      {tipo:'bloco', label:'Checklist COREQ', mostrarSe:['abordagem',['Qualitativa','Mista']], orient:"<p>O <b>COREQ</b> (<i>Consolidated Criteria for Reporting Qualitative Research</i>; Tong, Sainsbury e Craig, 2007; vers\u00e3o em portugu\u00eas validada por Souza et al., 2021) re\u00fane 32 itens em 3 dom\u00ednios. Use-o para <b>planejar</b> o que precisa ser definido e, depois, para <b>relatar</b> o estudo. Marque os itens j\u00e1 contemplados no projeto; a lista entra como ap\u00eandice no PDF.</p>"},
+      {id:'coreq_d1', label:'Domínio 1 · Equipe de pesquisa e reflexividade', tipo:'chipsm', coluna:true, opcoes:["1. Entrevistador/facilitador: quem conduziu a entrevista ou o grupo focal", "2. Credenciais: titulação do(s) pesquisador(es)", "3. Ocupação no momento do estudo", "4. Gênero do(s) pesquisador(es)", "5. Experiência e treinamento em pesquisa qualitativa", "6. Relação estabelecida com os participantes antes do estudo", "7. Conhecimento dos participantes sobre o entrevistador (objetivos e motivos da pesquisa)", "8. Características do entrevistador (vieses, pressupostos, interesses)"], mostrarSe:['abordagem',['Qualitativa','Mista']]},
+      {id:'coreq_d2', label:'Domínio 2 · Desenho do estudo', tipo:'chipsm', coluna:true, opcoes:["9. Orientação metodológica e teoria", "10. Amostragem (intencional, conveniência, bola de neve…)", "11. Forma de abordagem dos participantes", "12. Tamanho da amostra", "13. Não participação (recusas, desistências e motivos)", "14. Cenário da coleta de dados", "15. Presença de não participantes durante a coleta", "16. Descrição da amostra", "17. Roteiro da entrevista (perguntas, teste piloto)", "18. Repetição de entrevistas", "19. Gravação de áudio ou vídeo", "20. Notas de campo", "21. Duração das entrevistas ou grupos", "22. Saturação de dados", "23. Devolução das transcrições aos participantes"], mostrarSe:['abordagem',['Qualitativa','Mista']]},
+      {id:'coreq_d3', label:'Domínio 3 · Análise e resultados', tipo:'chipsm', coluna:true, opcoes:["24. Número de codificadores", "25. Descrição da árvore de codificação", "26. Origem dos temas (definidos antes ou derivados dos dados)", "27. Software utilizado", "28. Verificação dos resultados pelos participantes", "29. Citações dos participantes apresentadas e identificadas", "30. Consistência entre dados e resultados", "31. Clareza dos temas principais", "32. Clareza dos temas secundários"], mostrarSe:['abordagem',['Qualitativa','Mista']]}
 ]},
     {grupo:"Etapa 7 · Planejar", titulo:"Cronograma", guia:"<p>A forma mais segura de calcular o tempo é somar as três macrofases.</p>\n<div class=\"mini\">\n<div><b>1. Planejamento e organização · 1 a 2 meses</b>Desenho do projeto, reuniões com a equipe, extração de dados do prontuário e calibração das ferramentas.</div>\n<div><b>2. Execução e ciclos · 3 a 6 meses</b>As ações acontecem na prática: oficinas, visitas domiciliares, auditorias, atendimentos.</div>\n<div><b>3. Avaliação e consolidação · 1 mês</b>Indicadores finais, comparação antes e depois e relatório de impacto.</div>\n</div>\n<div class=\"tip\"><b>Regra de ouro: 6 a 12 meses.</b> É a duração sustentável para projetos locais em UBS. Prazos mais longos correm risco de descontinuidade por mudanças políticas ou institucionais.</div>\n<div class=\"warn\"><b>Reserve 20% a 30% de margem</b> para os gargalos da APS: surtos (como dengue), rotatividade de profissionais, férias e feriados, tempo de resposta da gestão. Projetos sobre arboviroses devem cobrir todo o período de maior incidência (4 a 5 meses).</div>", campos:[
       {id:'crono_inicio', label:'Mês de início', tipo:'month', ajuda:'Usado para nomear as colunas do quadro.'},
@@ -1262,6 +1282,7 @@ function oculto(c, conteudo){
   const dep=DEF[c.mostrarSe[0]] || camposTodos().find(x=>x.id===c.mostrarSe[0]);
   if(dep && oculto(dep, conteudo)) return true;
   const v = conteudo ? conteudo[c.mostrarSe[0]] : (dep && document.getElementById('w_'+dep.id) ? lerCampo(dep) : '');
+  if(Array.isArray(c.mostrarSe[1])) return c.mostrarSe[1].indexOf(v||'')===-1;
   return c.mostrarSe[1]==='*' ? !v : v!==c.mostrarSe[1];
 }
 function camposTodos(){ return Object.keys(FORMS).reduce((a,k)=>a.concat(camposDe(FORMS[k])),[]).filter(c=>c.id); }
@@ -1886,8 +1907,8 @@ async function gerarPdfPI(){
   try{
     if(!window.jspdf){ await carregarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); await carregarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'); }
     const St={meta:{titulo:c.titulo_pi, subtitulo:c.subtitulo, autores:c.autores, orientador:c.orientador, instituicao:c.instituicao, natureza:c.natureza, cidade:c.cidade, ano:c.ano_pi, categoria:c.categoria, equipe:c.equipe},
-      intro:{contexto:c.contexto, justificativa:c.justificativa}, diag:{problema:c.problema, dados:c.dados}, obj:{geral:c.obj_geral, especificos:c.obj_esp},
-      fund:{texto:c.fundamentacao}, metodo:{texto:c.metodologia, acoes:c.acoes||[]}, crono:{inicio:c.crono_inicio||'', fases:c.fases||[], obs:c.crono_obs},
+      intro:{contexto:c.contexto, justificativa:c.justificativa}, diag:{problema:c.problema, dados:c.dados, fofa:c.usar_fofa==='Sim'?{f:c.fofa_forcas, fr:c.fofa_fraquezas, o:c.fofa_oportunidades, a:c.fofa_ameacas, e:c.fofa_estrategias}:null}, obj:{geral:c.obj_geral, especificos:c.obj_esp},
+      fund:{texto:c.fundamentacao}, metodo:{texto:c.metodologia, abordagem:c.abordagem||'Quantitativa', acoes:(c.abordagem==='Qualitativa')?[]:(c.acoes||[]), quali:(c.abordagem==='Qualitativa'||c.abordagem==='Mista')?{tecnica:c.quali_tecnica||[], participantes:c.quali_participantes, roteiro:c.roteiro||[], registro:c.quali_registro, analise:c.quali_analise, analiseDesc:c.quali_analise_desc, etica:c.quali_etica, coreq:[[ 'Equipe de pesquisa e reflexividade', camposDe(FORMS.PI).find(x=>x.id==='coreq_d1').opcoes, c.coreq_d1||[] ],[ 'Desenho do estudo', camposDe(FORMS.PI).find(x=>x.id==='coreq_d2').opcoes, c.coreq_d2||[] ],[ 'Análise e resultados', camposDe(FORMS.PI).find(x=>x.id==='coreq_d3').opcoes, c.coreq_d3||[] ]]}:null}, crono:{inicio:c.crono_inicio||'', fases:c.fases||[], obs:c.crono_obs},
       recursos:{humanos:c.rec_humanos, materiais:c.rec_materiais, financeiro:c.rec_financeiro},
       monit:{texto:c.monitoramento, indicadores:c.indicadores||[], registro:c.registro},
       refs:{texto:c.referencias, ordenar:c.ordenar!=='Ordem digitada'}, opts:{fonte:c.fonte_pdf==='Arial'?'helvetica':'times'}};
@@ -2311,6 +2332,16 @@ function buildPDF(S, jsPDF){
     h1('Diagnóstico situacional');
     if (has(D.problema)){ h2('Problema central'); para(D.problema); }
     if (has(D.dados)){ h2('Identificação do problema e linha de base'); para(D.dados); }
+    var Fo = D.fofa;
+    if (Fo && [Fo.f,Fo.fr,Fo.o,Fo.a].some(has)){
+      h2('Matriz FOFA (SWOT)');
+      block('O Quadro ' + (nQuadro+1) + ' apresenta a matriz FOFA, que organiza os fatores internos (forças e fraquezas) e externos (oportunidades e ameaças) relacionados ao problema.', {});
+      var lst = function(t){ return paras(t).map(function(x){ return '• ' + clean(x); }).join('\n') || '—'; };
+      quadro('Matriz FOFA (forças, oportunidades, fraquezas e ameaças)', ['', 'Fatores positivos', 'Fatores negativos'],
+        [['Ambiente interno', 'Forças\n' + lst(Fo.f), 'Fraquezas\n' + lst(Fo.fr)], ['Ambiente externo', 'Oportunidades\n' + lst(Fo.o), 'Ameaças\n' + lst(Fo.a)]],
+        {0:{cellWidth:24, fontStyle:'bold'}});
+      if (has(Fo.e)){ block('Estratégias a partir do cruzamento da matriz:', {indent:0}); para(Fo.e); }
+    }
   }
   var esp = paras(O.especificos);
   if (has(O.geral) || esp.length){
@@ -2328,15 +2359,34 @@ function buildPDF(S, jsPDF){
   if (has(Fu.texto)){ h1('Fundamentação teórica'); para(Fu.texto); }
 
   var acoes = (Me.acoes||[]).filter(function(a){ return ['oque','porque','onde','quando','quem','como','quanto'].some(function(k){return has(a[k]);}); });
-  if (has(Me.texto) || acoes.length){
+  var Q = Me.quali;
+  var temQ = Q && (has(Q.participantes) || (Q.tecnica||[]).length || (Q.roteiro||[]).some(function(r){ return has(r.pergunta); }) || has(Q.registro) || has(Q.analise) || has(Q.etica));
+  if (has(Me.texto) || acoes.length || temQ){
     h1('Metodologia');
     para(Me.texto);
+    if (Me.abordagem && Me.abordagem !== 'Quantitativa') block('Trata-se de intervenção com abordagem ' + (Me.abordagem === 'Mista' ? 'mista, que combina o plano de ação com indicadores quantitativos e a produção de dados qualitativos' : 'qualitativa') + '.', {});
     if (acoes.length){
       h2('Plano de ação (5W2H)');
       block('O Quadro ' + (nQuadro+1) + ' apresenta o plano de ação da intervenção, organizado segundo a ferramenta 5W2H.', {});
       quadro('Plano de ação da intervenção (5W2H)',
         ['O quê','Por quê','Onde','Quando','Quem','Como','Quanto'],
         acoes.map(function(a){ return ['oque','porque','onde','quando','quem','como','quanto'].map(function(k){ return clean(a[k]); }); }));
+    }
+    if (temQ){
+      h2('Abordagem qualitativa');
+      if ((Q.tecnica||[]).length) block('Técnica de coleta de dados: ' + Q.tecnica.join('; ').toLowerCase() + '.', {});
+      if (has(Q.participantes)){ block('**Participantes e seleção.**', {indent:0}); para(Q.participantes); }
+      var rot = (Q.roteiro||[]).filter(function(r){ return has(r.pergunta); });
+      if (rot.length){
+        block('O Quadro ' + (nQuadro+1) + ' apresenta o roteiro da entrevista, organizado por momentos e relacionado aos objetivos específicos.', {});
+        quadro('Roteiro de entrevista', ['Momento','Pergunta','Perguntas de apoio','Objetivo'],
+          rot.map(function(r){ return [clean(r.momento||''), clean(r.pergunta), clean(r.sondagem||''), clean(r.objetivo||'')]; }),
+          {0:{cellWidth:26}, 3:{cellWidth:24}});
+      }
+      if (has(Q.registro)){ block('**Registro dos dados.**', {indent:0}); para(Q.registro); }
+      if (has(Q.analise) || has(Q.analiseDesc)){ block('**Análise dos dados.**' + (has(Q.analise) ? ' Método: ' + clean(Q.analise) + '.' : ''), {indent:0}); para(Q.analiseDesc); }
+      if (has(Q.etica)){ block('**Aspectos éticos.**', {indent:0}); para(Q.etica); }
+      block('O planejamento e o relato seguem o guia COREQ (Consolidated Criteria for Reporting Qualitative Research), apresentado no Apêndice A.', {});
     }
   }
 
@@ -2403,6 +2453,15 @@ function buildPDF(S, jsPDF){
       block(r, o);
       if (i < refs.length-1) y += LS;
     });
+  }
+
+  if (temQ && Q.coreq){
+    newPage();
+    hUnnum('Apêndice A - Lista de verificação COREQ');
+    var nTot = 0, nOk = 0, bodyC = [];
+    Q.coreq.forEach(function(d){ d[1].forEach(function(it){ var ok = d[2].indexOf(it) > -1; nTot++; if (ok) nOk++; bodyC.push([d[0], clean(it), ok ? 'Contemplado' : 'A definir']); }); });
+    block(nOk + ' de ' + nTot + ' itens do COREQ contemplados no projeto.', {});
+    quadro('Lista de verificação COREQ (Tong; Sainsbury; Craig, 2007)', ['Domínio','Item','Situação'], bodyC, {0:{cellWidth:34}, 2:{cellWidth:26}});
   }
 
   // ---------- preencher sumário ----------
