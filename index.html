@@ -986,7 +986,8 @@ function svg(id){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 function corDe(id){ return MENU.find(m=>m.id===id) || LINKS_EXTERNOS.find(m=>m.id===id) || MENU[0]; }
 function estiloCor(id){ const m=corDe(id); return '--c:'+m.c+';--c2:'+m.c2; }
 function bolha(id){ return '<span class="ic" style="'+estiloCor(id)+'">'+svg(id)+'</span>'; }
-function menuVisivel(){ return MENU.filter(m=>!m.perfis || m.perfis.indexOf(S.eu.perfil)>-1); }
+const ROTAS_SERV_NOVO=['auditoria'];
+function menuVisivel(){ return MENU.filter(m=>(!m.perfis || m.perfis.indexOf(S.eu.perfil)>-1) && (!FORMS[m.id] || (S.tipos && S.tipos[m.id])) && (S.servNovo || ROTAS_SERV_NOVO.indexOf(m.id)===-1)); }
 
 const ICON_SINO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
 const ICON_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>';
@@ -1181,9 +1182,12 @@ async function iniciar(){
   try{ r=await call('init',{},true); }catch(e){ if(!S.token) return; sairLocal(); return; }
   r.url = window.PAGINA_EXTERNA ? location.origin+location.pathname : r.url;
   S.eu=r.eu; S.programa=r.programa||PROGRAMA_PADRAO; S.logos=logosInova(r.logos); S.logosCfg=r.logosCfg||[]; S.usuarios=r.usuarios; S.config=r.config; S.tipos=r.tipos; S.url=r.url; S.naoLidas=r.naoLidas;
-  S.prefs={email:r.email||'', emailResumo:!!r.emailResumo, guiaVisto:!!r.guiaVisto, termoAceito:r.termoAceito||'', termoVersao:r.termoVersao||''};
+  // servidor atualizado? (as funções novas só aparecem quando o Code.gs mais recente estiver publicado)
+  S.servNovo = r.termoVersao!==undefined;
+  let guiaLocal=false; try{ guiaLocal=localStorage.getItem('elo_guia_'+r.eu.id)==='1'; }catch(e){}
+  S.prefs={email:r.email||'', emailResumo:!!r.emailResumo, guiaVisto:!!r.guiaVisto||guiaLocal, termoAceito:r.termoAceito||'', termoVersao:r.termoVersao||''};
   if(r.trocarSenha) return telaTrocaObrigatoria();
-  if(!r.termoAceito) return telaTermo();
+  if(S.servNovo && !r.termoAceito) return telaTermo();
   montarShell(); ir('inicio');
   if(!S.prefs.guiaVisto) setTimeout(()=>abrirGuia(true), 400);
   clearInterval(S.poll); S.poll=setInterval(atualizarSino, 120000);
@@ -1231,7 +1235,8 @@ function abrirGuia(primeiraVez){
       '<div class="m-acoes"><button class="btn" id="gPular">'+(i===L.length-1?'Fechar':'Pular')+'</button>'+(i>0?'<button class="btn" id="gVolta">Voltar</button>':'')+'<button class="btn pri" id="gProx">'+(i===L.length-1?'Começar':'Próximo')+'</button></div>';
     $('#gPular').onclick=fim; if($('#gVolta')) $('#gVolta').onclick=()=>{ i--; pinta(); };
     $('#gProx').onclick=()=>{ if(i===L.length-1) return fim(); i++; pinta(); }; };
-  const fim=()=>{ fecharModal(); if(primeiraVez || !S.prefs.guiaVisto){ S.prefs.guiaVisto=true; call('guiaVisto',{},true).catch(()=>{}); } };
+  const fim=()=>{ fecharModal(); try{ localStorage.setItem('elo_guia_'+S.eu.id,'1'); }catch(e){}
+    if(primeiraVez || !S.prefs.guiaVisto){ S.prefs.guiaVisto=true; if(S.servNovo) call('guiaVisto',{},true).catch(()=>{}); } };
   abrirModal(''); pinta();
 }
 
@@ -1246,8 +1251,8 @@ function recuperarSenhaUI(){
     '<div class="m-acoes"><button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn" id="rcEnv">Enviar código</button><button class="btn pri hidden" id="rcOk">Redefinir senha</button></div>');
   $('#rcEnv').onclick=async()=>{ const u=val('rcU'); if(!u) return $('#rcE').textContent='Informe o usuário ou o e-mail.';
     $('#rcE').textContent=''; busy(true);
-    try{ const r=await rodar('recuperarSenha',u); $('#rcM').textContent=r.msg; $('#rcP2').classList.remove('hidden'); $('#rcOk').classList.remove('hidden'); $('#rcEnv').textContent='Reenviar código'; }
-    catch(e){ $('#rcE').textContent=msgErro(e); } finally{ busy(false); } };
+    try{ const r=await rodar('recuperarSenha',u); if(!r||!r.msg) throw new Error('Função inválida'); $('#rcM').textContent=r.msg; $('#rcP2').classList.remove('hidden'); $('#rcOk').classList.remove('hidden'); $('#rcEnv').textContent='Reenviar código'; }
+    catch(e){ const m=msgErro(e); $('#rcE').textContent=/Função inválida|inválida/i.test(m)?'A recuperação por e-mail ainda não está ativa. Peça a redefinição da senha à supervisão de preceptoria.':m; } finally{ busy(false); } };
   $('#rcOk').onclick=async()=>{ const u=val('rcU'), c=val('rcC'), n=$('#rcN').value;
     if(n!==$('#rcN2').value) return $('#rcE').textContent='As senhas não conferem.';
     busy(true); try{ const r=await rodar('redefinirSenha',u,c,n); fecharModal(); toast('Senha redefinida. Entre com o usuário '+r.login+' e a nova senha.','ok'); const l=$('#lgU'); if(l) l.value=r.login; }
@@ -1290,7 +1295,7 @@ function montarShell(){
    '<button class="icon" title="Sair" onclick="sair()">'+svg('sair')+'</button></div></aside>'+
    '<div class="side-bg" onclick="menuLateral(false)"></div>'+
    '<div class="conteudo"><header class="top no-print"><div class="top-tit"><button class="icon hamb" title="Menu" onclick="menuLateral(true)">'+svg('menu')+'</button><span id="topTit">Início</span></div>'+
-   '<form class="busca-top" onsubmit="event.preventDefault();const q=this.q.value.trim(); if(q) ir(\'busca\',{q:q});"><span class="ic-b">'+svg('busca')+'</span><input name="q" type="search" placeholder="Buscar documento, residente ou projeto" autocomplete="off" aria-label="Buscar"></form>'+
+   (S.servNovo?'':'<span class="busca-off"></span>')+'<form class="busca-top'+(S.servNovo?'':' hidden')+'" onsubmit="event.preventDefault();const q=this.q.value.trim(); if(q) ir(\'busca\',{q:q});"><span class="ic-b">'+svg('busca')+'</span><input name="q" type="search" placeholder="Buscar documento, residente ou projeto" autocomplete="off" aria-label="Buscar"></form>'+
    '<div class="acts"><button class="icon" title="Notificações" onclick="abrirNotif()">'+ICON_SINO+'<span id="badge" class="badge hidden"></span></button>'+
    '<button class="icon" title="Minha conta" onclick="menuConta()">'+ICON_USER+'</button></div></header>'+
    '<main id="view"></main></div></div>';
@@ -1326,15 +1331,16 @@ function voltar(){ ir(S.ultimaLista||'inicio'); }
 
 function menuConta(){
   abrirModal('<h2>'+esc(S.eu.nome)+'</h2><p class="mut sm">'+esc(PERFIL_NOME[S.eu.perfil])+(S.eu.categoria?' · '+esc(S.eu.categoria):'')+' · '+esc(S.eu.unidade)+'<br>Usuário: '+esc(S.eu.login)+'</p>'+
+   (S.servNovo?''+
    '<h3 class="sec">E-mail e avisos</h3>'+
    '<div class="fld"><label class="lbl" for="cEm">E-mail (para recuperar a senha e receber o resumo)</label><input type="email" id="cEm" value="'+esc((S.prefs&&S.prefs.email)||'')+'" placeholder="nome@exemplo.com"></div>'+
    '<label style="display:flex;gap:8px;align-items:flex-start;font-size:.9rem"><input type="checkbox" id="cRes"'+(S.prefs&&S.prefs.emailResumo?' checked':'')+' style="margin-top:3px"> Receber por e-mail, toda segunda-feira, o resumo das minhas pendências (assinaturas e lembretes)</label>'+
-   '<div class="m-acoes" style="margin-top:8px"><button class="btn" id="cPref">Salvar e-mail e avisos</button></div>'+
+   '<div class="m-acoes" style="margin-top:8px"><button class="btn" id="cPref">Salvar e-mail e avisos</button></div>'+'':'')+
    '<h3 class="sec">Alterar senha</h3>'+formSenhaHTML()+
    '<p class="sm" style="margin-top:10px"><a href="#" onclick="fecharModal();abrirGuia();return false">Ver o guia rápido</a> · <a href="#" onclick="fecharModal();verTermo();return false">Termo de uso e privacidade</a>'+(S.prefs&&S.prefs.termoAceito?' <span class="mut">(aceito em '+esc(dataHoraBr(S.prefs.termoAceito))+')</span>':'')+'</p>'+
    '<div class="m-acoes"><button class="btn dng" onclick="sair()">Sair</button><button class="btn" onclick="fecharModal()">Fechar</button><button class="btn pri" id="csB">Salvar senha</button></div>');
   $('#csB').onclick=()=>trocarSenha(async()=>{ fecharModal(); toast('Senha atualizada.','ok'); });
-  $('#cPref').onclick=async()=>{ const d={email:val('cEm'), emailResumo:$('#cRes').checked};
+  if($('#cPref')) $('#cPref').onclick=async()=>{ const d={email:val('cEm'), emailResumo:$('#cRes').checked};
     try{ await call('preferencias',d); S.prefs.email=d.email; S.prefs.emailResumo=d.emailResumo; toast('Preferências salvas.','ok'); }catch(e){} };
 }
 
@@ -1425,6 +1431,7 @@ function kpiMeta(rot, n, meta){
 const VIGI_FAIXA=v=>v>75?'Ótimo':v>50?'Bom':v>25?'Suficiente':'Regular';
 async function carregarVigi(){
   const box=$('#pVigi'); if(!box) return;
+  if(!S.servNovo){ box.innerHTML=''; return; }
   box.innerHTML='<h3 class="sec-t">Indicadores da APS · Vigilância</h3><div class="card vazio">Carregando resultados…</div>';
   let r; try{ r=await call('vigiResultados',{unidade:S.pUn},true); }catch(e){ box.innerHTML='<h3 class="sec-t">Indicadores da APS · Vigilância</h3><div class="card vazio">Não foi possível carregar: '+esc(msgErro(e))+'</div>'; return; }
   if(r.erro||!r.series||!r.series.length){ box.innerHTML='<h3 class="sec-t">Indicadores da APS · Vigilância</h3><div class="card vazio">'+esc(r.erro||r.aviso||'Sem resultados.')+'<br><small>Os resultados chegam aqui quando alguém da unidade gera as planilhas no site da Vigilância dos indicadores.</small></div>'; return; }
@@ -1926,7 +1933,7 @@ async function vEditar(p){
       (meus.length?'<optgroup label="Meus residentes">'+meus.map(op).join('')+'</optgroup>':'')+
       (outros.length?'<optgroup label="Demais residentes da unidade">'+outros.map(op).join('')+'</optgroup>':'')+'</select><div class="mut sm" id="catInfo"></div></div>';
   }
-  if(TRAVADOS.indexOf(tipo)>-1){
+  if(TRAVADOS.indexOf(tipo)>-1 && S.servNovo){
     if(!p.id){ try{ const t=await call('iniciarAtividade',{tipo:tipo},true); S.edit.inicioTk=t.tk; r.inicio=t.inicio; r.data=t.inicio.slice(0,10); r.hora=t.inicio.slice(11,16); }catch(e){ toast('Não foi possível registrar o início pelo servidor. Verifique a conexão.','err'); return voltar(); } }
     S.edit.inicio=r.inicio||''; S.edit.fim=r.fim||'';
     h+='<input type="hidden" id="f__data" value="'+esc(r.data)+'"><input type="hidden" id="f__hora" value="'+esc(r.hora||'')+'">'+
@@ -1938,7 +1945,7 @@ async function vEditar(p){
   const partHTML = !F.participantes ? '' : campoHTML({id:'_part', label:'Lista de presença — participantes (recebem a ata para assinatura)', tipo:'multi', fonte:['preceptor','supervisor','admin','gestor','residente','colaborador'], excluirEu:true, obrig:true, agrupar:true, ajuda:'Inclui preceptores, residentes, gestão e demais servidores cadastrados. Quem não tem cadastro pode ser listado no campo “Demais participantes”.'}, r.participantes);
   h+='</div>';
 
-  if(tipo==='PI') h+='<div id="piComp">'+piCompHTML()+'</div><div id="piNovo"></div>';
+  if(tipo==='PI' && S.servNovo) h+='<div id="piComp">'+piCompHTML()+'</div><div id="piNovo"></div>';
   if(F.etapas && F.guiaLayout){
     h+=piLayoutHTML(F, r.conteudo);
   } else if(F.etapas){
@@ -2967,7 +2974,7 @@ async function vFrequencia(){
   await fqCarregar();
 }
 function fqPintarAbas(){
-  const a=[['registrar','Registrar'],['historico','Meu histórico'],['conferencia','Conferência com a escala']]; if(fqGestao()) a.push(['painel','Painel'],['config','Configurar']);
+  const a=[['registrar','Registrar'],['historico','Meu histórico']]; if(S.servNovo) a.push(['conferencia','Conferência com a escala']); if(fqGestao()) a.push(['painel','Painel'],['config','Configurar']);
   if(S.eu.perfil==='admin') a.splice(0,2);
   if(!a.some(x=>x[0]===FQ.aba)) FQ.aba=a[0][0];
   const t=$('#fqTabs'); if(t) t.innerHTML=a.map(x=>'<button class="'+(x[0]===FQ.aba?'on':'')+'" onclick="fqIr(\''+x[0]+'\')">'+x[1]+'</button>').join('');
