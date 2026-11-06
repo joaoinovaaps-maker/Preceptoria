@@ -163,6 +163,7 @@ details.etapa[open] summary{border-bottom:1px solid var(--bd);margin-bottom:12px
 .fl-tab td,.fl-tab th{padding:4px 6px;white-space:nowrap}.fl-tab input[type=time]{min-width:92px;padding:4px 6px}
 .fl-tab tr.fds td{background:#f3f6fa;color:var(--mut)}.fl-h{font-weight:700}
 .fl-tot{margin:4px 0 8px;font-size:.95rem}
+.fl-info{background:var(--pri2);border-color:#c9d8ea;font-size:.92rem}
 @media (max-width:600px){.acts .ic-sug{display:none}.fl-tab td,.fl-tab th{padding:3px 2px}.fl-tab input[type=time]{min-width:0;width:74px;padding:3px 2px;font-size:.8rem}.fl-tab small{display:none}}
 .fl-foto{position:relative;display:inline-block}.fl-foto img{width:96px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);cursor:pointer}
 .fl-foto .x{position:absolute;top:-6px;right:-6px;background:#fff;border-radius:50%;width:22px;height:22px;box-shadow:0 1px 3px rgba(0,0,0,.2)}
@@ -3489,7 +3490,8 @@ function flTabelaLeitura(f){
 function flTelaLista(){
   const box=$('#flBox'); if(!box) return; const r=FL.dados, sec=['secretaria','admin'].indexOf(S.eu.perfil)>-1;
   const L=r.folhas||[], ag=L.filter(f=>f.status==='enviada').length, tot=L.reduce((a,f)=>a+f.total_min,0);
-  let h='<div class="grid g4" style="margin-bottom:12px"><div class="kpi"><span>Folhas recebidas</span><b>'+L.length+'</b></div><div class="kpi"><span>Aguardando conferência</span><b style="color:var(--warn)">'+ag+'</b></div><div class="kpi"><span>Residentes sem envio</span><b style="color:var(--err)">'+(r.pendentes||[]).length+'</b></div><div class="kpi"><span>Horas no mês (soma)</span><b>'+flHoras(tot)+'</b></div></div>';
+  let h='<div class="card fl-info"><b>📷 O envio da foto da folha é feito pelo(a) próprio(a) residente</b>, ao entrar na plataforma com o seu usuário (menu Frequência). Aqui '+(sec?'você confere as folhas enviadas e confirma o recebimento.':'você acompanha as folhas enviadas e as horas do mês.')+'</div>'+
+    '<div class="grid g4" style="margin-bottom:12px"><div class="kpi"><span>Folhas recebidas</span><b>'+L.length+'</b></div><div class="kpi"><span>Aguardando conferência</span><b style="color:var(--warn)">'+ag+'</b></div><div class="kpi"><span>Residentes sem envio</span><b style="color:var(--err)">'+(r.pendentes||[]).length+'</b></div><div class="kpi"><span>Horas no mês (soma)</span><b>'+flHoras(tot)+'</b></div></div>';
   h+= L.length ? '<div class="card" style="padding:0;overflow-x:auto"><table class="tab-aud"><thead><tr><th>Residente</th><th>Horas</th><th>Dias</th><th>Enviada em</th><th>Situação</th><th></th></tr></thead><tbody>'+
     L.map((f,i)=>'<tr><td><b>'+esc(f.nome)+'</b><br><small class="mut">'+esc([f.ano,f.categoria,f.unidade].filter(Boolean).join(' · '))+(f.preceptor?' · Preceptor(a): '+esc(f.preceptor.split(' ')[0]):'')+'</small></td><td><b>'+flHoras(f.total_min)+'</b></td><td>'+f.dias.length+'</td><td>'+dataHoraBr(f.enviado_em)+'</td><td><span class="chip '+FL_CHIP[f.status]+'">'+FL_ST[f.status]+'</span></td>'+
       '<td><button class="btn sm'+(sec&&f.status==='enviada'?' pri':'')+'" onclick="flVer('+i+')">'+(sec&&f.status==='enviada'?'Conferir':'Ver')+'</button></td></tr>').join('')+'</tbody></table></div>'
