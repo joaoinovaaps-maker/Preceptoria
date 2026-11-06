@@ -2172,6 +2172,32 @@ function pintarUsuarios(){
     '<div class="reg-meta">'+esc(PERFIL_NOME[u.perfil])+(u.categoria?' · '+esc(u.categoria):'')+' · '+esc(u.unidade)+(u.ano?' · '+esc(u.ano):'')+(u.equipe?' · '+esc(u.equipe):'')+' · usuário: '+esc(u.login)+
     (u.perfil==='residente'&&u.preceptor_id?' · preceptor(a): '+esc(nomeListaU(u.preceptor_id)):'')+'</div></div></div></div>').join('') : '<div class="card vazio">Nenhum usuário.</div>';
 }
+/* Exclusão permanente de cadastro duplicado (o histórico vai para o cadastro mantido) */
+function excluirDuplicado(dup){
+  const norm=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const outros=(S.listaU||[]).filter(x=>x.id!==dup.id);
+  const mesmos=outros.filter(x=>norm(x.nome)===norm(dup.nome)), resto=outros.filter(x=>norm(x.nome)!==norm(dup.nome)).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const op=x=>'<option value="'+x.id+'">'+esc(x.nome)+' · '+esc(x.login)+' · '+esc(PERFIL_NOME[x.perfil]||x.perfil)+(x.ativo?'':' (inativo)')+'</option>';
+  abrirModal('<h2>Excluir duplicado permanentemente</h2>'+
+    '<p class="sm">Será <b>apagado</b> o cadastro <b>'+esc(dup.nome)+'</b> (usuário: <b>'+esc(dup.login)+'</b>). Documentos, assinaturas, frequência, notificações, escala e vínculos de residentes desse cadastro passam para o cadastro mantido.</p>'+
+    '<div class="fld"><label class="lbl" for="dM">Cadastro que será mantido</label><select id="dM"><option value="">Selecione…</option>'+
+      (mesmos.length?'<optgroup label="Mesmo nome (prováveis duplicados)">'+mesmos.map(op).join('')+'</optgroup>':'')+'<optgroup label="Demais usuários">'+resto.map(op).join('')+'</optgroup></select></div>'+
+    '<label style="display:flex;gap:8px;align-items:flex-start;font-size:.9rem"><input type="checkbox" id="dC" style="margin-top:3px"> Entendo que esta ação é definitiva e não pode ser desfeita.</label>'+
+    '<div class="fld" style="margin-top:10px"><label class="lbl" for="dS">Confirme com a sua senha</label><input type="password" id="dS" autocomplete="current-password"></div>'+
+    '<div class="erro-m" id="dE"></div><div class="m-acoes"><button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn dng" id="dOk">Excluir permanentemente</button></div>');
+  if(mesmos.length===1) $('#dM').value=mesmos[0].id;
+  $('#dOk').onclick=async()=>{
+    const manter=val('dM'), senha=$('#dS').value, b=$('#dOk');
+    if(!manter) return $('#dE').textContent='Escolha o cadastro que será mantido.';
+    if(!$('#dC').checked) return $('#dE').textContent='Marque a confirmação.';
+    if(!senha) return $('#dE').textContent='Digite a sua senha.';
+    b.disabled=true; b.textContent='Excluindo…'; $('#dE').textContent='';
+    try{ const r=await call('mesclarUsuario',{id:dup.id, manter:manter, senha:senha}, true);
+      fecharModal(); S.listaU=await call('listarUsuarios',{},true); recarregarUsuarios(); pintarUsuarios();
+      toast('Cadastro duplicado excluído. '+r.transferidos+' registro(s) transferido(s) para '+r.manter+'.','ok');
+    }catch(e){ const x=$('#dE'); if(x) x.textContent=msgErro(e); b.disabled=false; b.textContent='Excluir permanentemente'; }
+  };
+}
 function nomeListaU(id){ const u=(S.listaU||[]).find(x=>x.id===id); return u?u.nome:nomeU(id); }
 
 function formUsuario(id){
@@ -2190,6 +2216,7 @@ function formUsuario(id){
     '<div class="fld"><label class="lbl" for="uEq">Equipe</label><input type="text" id="uEq" placeholder="Ex.: ESF 60 Ipê Amarelo" value="'+esc(u.equipe||'')+'"></div></div>'+
     '<div class="fld" id="uPrW"><label class="lbl" for="uPr">Preceptor(a) de referência</label><select id="uPr"><option value="">—</option>'+precs.map(x=>'<option value="'+x.id+'"'+(x.id===u.preceptor_id?' selected':'')+'>'+esc(x.nome)+(x.categoria?' — '+esc(x.categoria):'')+'</option>').join('')+'</select></div>'+
     (id?'<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="uA"'+(u.ativo?' checked':'')+'> Usuário ativo</label>':'')+
+    (id&&id!==S.eu.id?'<p class="sm" style="margin:10px 0 0"><a href="#" id="uDup">Excluir duplicado permanentemente (transfere o histórico para o cadastro correto)</a></p>':'')+
     '<div class="erro-m" id="uErr"></div><div class="m-acoes">'+(id&&id!==S.eu.id?'<button class="btn dng" id="uDel" style="margin-right:auto">Excluir usuário</button>':'')+(id?'<button class="btn" id="uRs">Redefinir senha</button>':'')+
     '<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="uOk">Salvar</button></div>');
   const tg=()=>{ const r=val('uP')!=='residente'; $('#uPrW').classList.toggle('hidden', r); $('#uAnoW').classList.toggle('hidden', r); }; $('#uP').onchange=tg; tg();
@@ -2210,6 +2237,7 @@ function formUsuario(id){
     'O cadastro de '+u.nome+' (usuário: '+u.login+') será removido definitivamente. Só é possível excluir quem não tem documentos, assinaturas ou frequência registrados; nesses casos, desative o usuário.','Excluir', async()=>{
     try{ await call('excluirUsuario',{id:id}); S.listaU=await call('listarUsuarios',{},true); recarregarUsuarios(); pintarUsuarios(); toast('Usuário excluído.','ok'); }catch(e){}
   });
+  if(id && $('#uDup')) $('#uDup').onclick=e=>{ e.preventDefault(); excluirDuplicado(u); };
   if(id) $('#uRs').onclick=()=>confirmar('Redefinir senha','Uma nova senha provisória será gerada e a atual deixará de funcionar.','Redefinir', async()=>{
     try{ const r=await call('resetarSenha',{id:id}); mostrarSenha(u.nome, u.login, r.senhaTemporaria); }catch(e){}
   });
