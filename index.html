@@ -3423,7 +3423,7 @@ function flTelaResidente(){
   if(atual) h+='<div class="card"><div class="ul"><div><b>Folha de '+mesBr(FL.mes)+'</b><div class="reg-meta">Enviada em '+dataHoraBr(atual.enviado_em)+' · '+flHoras(atual.total_min)+' em '+atual.dias.length+' dia(s)</div></div><span class="chip '+FL_CHIP[atual.status]+'">'+FL_ST[atual.status]+'</span></div>'+
     (atual.status!=='enviada' && atual.conferido_por?'<p class="sm" style="margin:6px 0 0">'+(atual.status==='confirmada'?'Recebimento confirmado':'Devolvida')+' por '+esc(atual.conferido_por)+' em '+dataHoraBr(atual.conferido_em)+(atual.obs?' · <b>'+esc(atual.obs)+'</b>':'')+'</p>':'')+'</div>';
   if(trav) h+='<div class="card">'+flTabelaLeitura(atual)+'</div>';
-  else h+='<div class="card"><h3 class="sec" style="margin-top:0">1. Foto ou PDF da folha de '+mesBr(FL.mes)+'</h3><p class="mut sm">Fotografe a folha <b>inteira e de frente</b> (celular paralelo à folha), com boa luz, sem sombra e sem cortar a tabela. A leitura funciona melhor com horários escritos em caneta azul. Até 4 arquivos: fotos ou PDF digitalizado (por exemplo, folha, comunicação de ocorrências e atestados); a plataforma lê as páginas que têm a tabela de horários.</p>'+
+  else h+='<div class="card"><h3 class="sec" style="margin-top:0">1. Foto ou PDF da folha de '+mesBr(FL.mes)+'</h3><p class="mut sm">Fotografe a folha <b>inteira e de frente</b> (celular paralelo à folha), com boa luz, sem sombra e sem cortar a tabela. A leitura funciona melhor com horários escritos em caneta azul. Até 4 arquivos: fotos ou PDF digitalizado (por exemplo, folha, comunicação de ocorrências e atestados); a plataforma lê as páginas que têm a tabela de horários. Os recortes dos horários lidos (apenas os números) são guardados para a leitura aprender a escrita dos residentes.</p>'+
       '<div class="anx" id="flFotos"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><label class="btn sm pri anx-add"><input type="file" accept="image/*" capture="environment" onchange="flFoto(this)"> 📷 Tirar foto</label><label class="btn sm anx-add"><input type="file" accept="image/*" onchange="flFoto(this)"> 🖼️ Escolher da galeria</label><label class="btn sm anx-add"><input type="file" accept="application/pdf,.pdf" onchange="flFoto(this)"> 📄 Enviar PDF</label></div></div>'+
     '<div class="card"><h3 class="sec" style="margin-top:0">2. Horários do mês</h3><p class="mut sm">Use <b>Ler horários do arquivo</b> para preencher automaticamente e confira dia a dia: a leitura pode errar em letra manuscrita. Você também pode digitar os horários.</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button type="button" class="btn sm" id="flOcr" onclick="flLer()">🔎 Ler horários do arquivo</button><button type="button" class="btn sm" onclick="flLimpar()">Limpar tabela</button></div><div id="flOcrMsg" class="mut sm" style="margin-bottom:6px"></div>'+
@@ -3558,6 +3558,16 @@ function flLerCelula(R, m, cw, ch, col){
 }
 function flGrupos(L,tol){ const G=[]; L.forEach(a=>{ const g=G[G.length-1]; if(g && a-g[g.length-1]<=tol) g.push(a); else G.push([a]); }); return G.map(g=>Math.round(g.reduce((s,x)=>s+x,0)/g.length)); }
 function flImagem(src){ return new Promise((ok,err)=>{ const im=new Image(); im.onload=()=>ok(im); im.onerror=()=>err(new Error('Imagem inválida.')); im.src=src; }); }
+/* recorte do horário (só a tinta, em preto e branco) guardado para treinar a leitura com a escrita dos residentes */
+function flRecorte(m, cw, ch){
+  let a=1e9,b=-1,c=1e9,d=-1; for(let y=0;y<ch;y++) for(let x=0;x<cw;x++) if(m[y*cw+x]){ if(x<a)a=x; if(x>b)b=x; if(y<c)c=y; if(y>d)d=y; }
+  if(b<0) return '';
+  a=Math.max(0,a-2); c=Math.max(0,c-2); b=Math.min(cw-1,b+2); d=Math.min(ch-1,d+2);
+  const w=b-a+1, h=d-c+1, k=Math.min(1,48/h), W2=Math.max(1,Math.round(w*k)), H2=Math.max(1,Math.round(h*k));
+  const cv=document.createElement('canvas'); cv.width=W2; cv.height=H2; const g=cv.getContext('2d'), id=g.createImageData(W2,H2);
+  for(let y=0;y<H2;y++) for(let x=0;x<W2;x++){ const v=m[(c+Math.floor(y/k))*cw+a+Math.floor(x/k)]?0:255, o=(y*W2+x)*4; id.data[o]=id.data[o+1]=id.data[o+2]=v; id.data[o+3]=255; }
+  g.putImageData(id,0,0); return cv.toDataURL('image/png');
+}
 /* lê a folha inteira: devolve {dias:{d:{e1,s1,e2,s2}}, conferir:{d:[campos]}} */
 async function flLerFolha(src, ult, aviso){
   const R=await flRede();
@@ -3598,7 +3608,7 @@ async function flLerFolha(src, ult, aviso){
     const ant=ys.filter(y=>y<t-2), cab=ant.length && (t-ant[ant.length-1])>1.25*pp ? 1 : 0, sc=n*10+cab*5-e/10; if(!M || sc>M.sc) M={t:t,p:pp,sc:sc}; });
   let p=M.p, t0=M.t; const pr=[]; for(let r=0;r<=31;r++){ const y=ys.find(y=>Math.abs(y-(t0+r*p))<=Math.max(4,p*0.2)); if(y!==undefined) pr.push([r,y]); }
   if(pr.length>=6){ const n=pr.length, sx=pr.reduce((s,q)=>s+q[0],0), sy=pr.reduce((s,q)=>s+q[1],0), sxx=pr.reduce((s,q)=>s+q[0]*q[0],0), sxy=pr.reduce((s,q)=>s+q[0]*q[1],0); p=(n*sxy-sx*sy)/(n*sxx-sx*sx); t0=(sy-p*sx)/n; }
-  const K=['e1','s1','e2','s2'], dias={}, conferir={};
+  const K=['e1','s1','e2','s2'], dias={}, conferir={}, amostras={};
   for(let r=0;r<Math.min(31,ult);r++){
     const top=t0+r*p, bot=t0+(r+1)*p; if(bot>=H) break;
     const lin={};
@@ -3626,13 +3636,14 @@ async function flLerFolha(src, ult, aviso){
         if(fila.length>=6 && alto>=Math.max(6,p*0.3) && cy>=top+1 && cy<=bot-1){ fila.forEach(z=>ok[z]=1); tot+=fila.length; } }
       if(tot<40) continue;   // célula vazia
       const res=flLerCelula(R, ok, cw, ch, c);
-      if(res){ lin[K[c]]=res.v; if(res.margem<0.5) (conferir[r+1]=conferir[r+1]||[]).push(K[c]); }
+      if(res){ lin[K[c]]=res.v; if(res.margem<0.5) (conferir[r+1]=conferir[r+1]||[]).push(K[c]);
+        try{ (amostras[r+1]=amostras[r+1]||{})[K[c]]=flRecorte(ok,cw,ch); }catch(e){} }
     }
     if(lin.e1 || lin.s1) dias[r+1]=lin;
     if(aviso) aviso(r+1);
     await new Promise(z=>setTimeout(z,0));   // mantém a tela responsiva
   }
-  return {dias:dias, conferir:conferir};
+  return {dias:dias, conferir:conferir, amostras:amostras};
 }
 
 /* Interpreta o texto lido da folha: cada linha com o dia e de 2 a 4 horários (entrada/saída da manhã e da tarde). */
@@ -3664,12 +3675,12 @@ async function flLer(){
         else FL.thumbs[id]='data:'+a.mime+';base64,'+a.base64; }
       if(FL.pdfs[id]) FL.pdfs[id].paginas.forEach((p,k)=>fontes.push({url:p.url, rot:'página '+(k+1)+' do PDF'})); else fontes.push({url:FL.thumbs[id], rot:'foto'});
     }
-    const ult=flUlt(FL.mes); let dias={}, conferir={}, nTab=0;
+    const ult=flUlt(FL.mes); let dias={}, conferir={}, amostras={}, nTab=0;
     // 1º: leitura da tabela (tinta da caneta + rede de dígitos manuscritos); páginas sem a tabela são ignoradas
     for(let i=0;i<fontes.length;i++){
       try{ msg.textContent='Procurando a tabela de horários ('+fontes[i].rot+', '+(i+1)+' de '+fontes.length+')…';
         const r=await flLerFolha(fontes[i].url, ult, d=>{ msg.textContent='Lendo '+fontes[i].rot+' ('+(i+1)+' de '+fontes.length+'): dia '+d+' de '+ult+'…'; });
-        nTab++; Object.keys(r.dias).forEach(d=>{ if(!dias[d]){ dias[d]=r.dias[d]; if(r.conferir[d]) conferir[d]=r.conferir[d]; } });
+        nTab++; Object.keys(r.dias).forEach(d=>{ if(!dias[d]){ dias[d]=r.dias[d]; if(r.conferir[d]) conferir[d]=r.conferir[d]; if(r.amostras&&r.amostras[d]) amostras[d]=r.amostras[d]; } });
       }catch(e){ /* página sem a tabela (ocorrências, atestados…) */ }
     }
     // 2º (se a tabela não foi reconhecida): leitura do texto corrido
@@ -3681,7 +3692,7 @@ async function flLer(){
     }
     const n=Object.keys(dias).length;
     if(!n){ msg.textContent='Não foi possível identificar horários na foto. Fotografe a folha de frente, inteira e com boa luz, ou digite os horários na tabela.'; return; }
-    E.dias={}; Object.keys(dias).forEach(d=>{ E.dias[d]=Object.assign({d:+d}, dias[d]); }); E.conferir=conferir; E.leitura='ocr';
+    E.dias={}; Object.keys(dias).forEach(d=>{ E.dias[d]=Object.assign({d:+d}, dias[d]); }); E.conferir=conferir; E.amostras=amostras; E.lidos=JSON.parse(JSON.stringify(dias)); E.leitura='ocr';
     const nc=Object.keys(conferir).reduce((a,d)=>a+conferir[d].length,0);
     flPintarTabela();
     msg.innerHTML='<b>'+n+' dia(s) lido(s)'+(nTab>1?' em '+nTab+' páginas com tabela':'')+'.</b> '+(nc?'<span class="fl-conf-leg">'+nc+' horário(s) em amarelo</span> com leitura incerta: confira com atenção. ':'')+'Confira todas as linhas com a folha assinada antes de enviar.';
@@ -3701,14 +3712,16 @@ function flPintarTabela(){
   flTotal();
 }
 function flTotal(){ const E=FL.edit; let t=0,n=0; Object.keys(E.dias).forEach(d=>{ const m=flMinDia(E.dias[d]); t+=m; if(m) n++; }); const el=$('#flTot'); if(el) el.innerHTML='Total do mês: <b>'+flHoras(t)+'</b> em <b>'+n+'</b> dia(s)'; }
-function flLimpar(){ FL.edit.dias={}; FL.edit.conferir={}; FL.edit.leitura='manual'; flPintarTabela(); }
+function flLimpar(){ FL.edit.dias={}; FL.edit.conferir={}; FL.edit.amostras={}; FL.edit.leitura='manual'; flPintarTabela(); }
 function flEnviar(){
   const E=FL.edit; if(!E.anexos.length) return toast('Envie a foto da folha de frequência.','err');
   const dias=Object.keys(E.dias).map(d=>E.dias[d]).filter(x=>flMinDia(x)>0);
   if(!dias.length) return toast('Preencha (ou leia da foto) os horários de pelo menos um dia.','err');
   const tot=dias.reduce((a,x)=>a+flMinDia(x),0);
   confirmar('Enviar folha de frequência','Folha de '+mesBr(FL.mes)+': '+flHoras(tot)+' em '+dias.length+' dia(s). Confirme que os horários conferem com a folha assinada. A secretaria acadêmica e o(a) seu(sua) preceptor(a) serão avisados.','Enviar', async()=>{
-    try{ await call('folhaEnviar',{mes:FL.mes, anexos:E.anexos, dias:dias, leitura:E.leitura}); toast('Folha enviada à secretaria acadêmica.','ok'); FL.edit=null; flCarregar(); }catch(e){}
+    // recortes dos horários lidos automaticamente (o rótulo final vem da folha confirmada pela secretaria)
+    const am=[]; if(rec('amostrasEscrita')) Object.keys(E.amostras||{}).forEach(d=>Object.keys(E.amostras[d]).forEach(k=>{ const img=E.amostras[d][k]; if(img && img.length<=8000 && am.length<140) am.push({d:+d, k:k, img:img, lido:((E.lidos||{})[d]||{})[k]||''}); }));
+    try{ await call('folhaEnviar',{mes:FL.mes, anexos:E.anexos, dias:dias, leitura:E.leitura, amostras:am}); toast('Folha enviada à secretaria acadêmica.','ok'); FL.edit=null; flCarregar(); }catch(e){}
   });
 }
 function flTabelaLeitura(f){
