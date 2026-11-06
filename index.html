@@ -442,6 +442,12 @@ details.etapa{border-radius:14px}
 }
 @media (prefers-reduced-motion:reduce){.side,.tile,.reg{transition:none}}
 @media print{.side,.side-bg,.top,.hero,.tiles{display:none!important}.conteudo{margin-left:0!important}.card{box-shadow:none}.reg{border-left:0}}
+/* Mostrar/ocultar senha */
+.pw-wrap{position:relative;display:block}
+.pw-wrap input{padding-right:46px!important;width:100%}
+.pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:#64748b;width:36px;height:36px;border-radius:9px;display:grid;place-items:center;cursor:pointer}
+.pw-eye:hover{background:#f1f5f9;color:#0f172a}
+.pw-eye svg{width:20px;height:20px}
 </style>
 </head>
 <body>
@@ -983,13 +989,29 @@ async function call(acao, dados, silencioso){
   try { return await rodar('api', S.token, acao, dados||{}); }
   catch(e){
     const m=msgErro(e);
-    if(m.indexOf('SESSAO')>-1){ sairLocal(); toast('Sessão encerrada. Entre novamente.'); }
+    if(m.indexOf('SESSAO_OUTRO')>-1){ sairLocal(); setTimeout(()=>abrirModal('<h2>Sessão encerrada</h2><p>Seu login foi usado para entrar em <b>outro aparelho ou navegador</b>. Por segurança, só é permitido um acesso por vez, e esta sessão foi encerrada.</p><p class="sm mut">Se não foi você, entre novamente e troque sua senha no menu do seu perfil.</p><div class="m-acoes"><button class="btn pri" onclick="fecharModal()">Entendi</button></div>'),150); }
+    else if(m.indexOf('SESSAO')>-1){ sairLocal(); toast('Sessão encerrada. Entre novamente.'); }
     else if(m.indexOf('TROCAR_SENHA')>-1){ telaTrocaObrigatoria(); }
     else if(!silencioso) toast(m,'err');
     throw e;
   } finally { busy(false); }
 }
 
+/* Botão de olho em todo campo de senha: mostra o que foi digitado */
+const OLHO_ABERTO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const OLHO_FECHADO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.9 8.3 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+function olhosSenha(raiz){
+  (raiz||document).querySelectorAll('input[type="password"]:not([data-olho])').forEach(inp=>{
+    inp.setAttribute('data-olho','1');
+    const w=document.createElement('span'); w.className='pw-wrap'; inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+    const b=document.createElement('button'); b.type='button'; b.className='pw-eye'; b.setAttribute('aria-label','Mostrar senha'); b.title='Mostrar senha'; b.innerHTML=OLHO_ABERTO;
+    b.onmousedown=e=>e.preventDefault();
+    b.onclick=()=>{ const ver=inp.type==='password'; inp.type=ver?'text':'password'; b.innerHTML=ver?OLHO_FECHADO:OLHO_ABERTO; b.setAttribute('aria-label',ver?'Ocultar senha':'Mostrar senha'); b.title=ver?'Ocultar senha':'Mostrar senha'; inp.focus(); };
+    w.appendChild(b);
+  });
+}
+new MutationObserver(()=>olhosSenha()).observe(document.documentElement,{childList:true,subtree:true});
+document.addEventListener('DOMContentLoaded',()=>olhosSenha());
 function abrirModal(html){ $('#modal-box').innerHTML=html; $('#modal').classList.remove('hidden'); const f=$('#modal-box input,#modal-box textarea'); if(f) f.focus(); }
 function fecharModal(){ $('#modal').classList.add('hidden'); $('#modal-box').innerHTML=''; $('#modal-box').classList.remove('largo'); }
 function confirmar(titulo, texto, rotulo, fn){
