@@ -442,6 +442,10 @@ details.etapa{border-radius:14px}
 }
 @media (prefers-reduced-motion:reduce){.side,.tile,.reg{transition:none}}
 @media print{.side,.side-bg,.top,.hero,.tiles{display:none!important}.conteudo{margin-left:0!important}.card{box-shadow:none}.reg{border-left:0}}
+/* Aviso de inatividade */
+#avisoInativo{position:fixed;inset:0;z-index:90;background:rgba(15,23,42,.5);display:grid;place-items:center;padding:16px}
+#avisoInativo .ai-box{background:#fff;border-radius:18px;padding:22px;max-width:380px;width:100%;box-shadow:0 24px 60px rgba(15,23,42,.3);text-align:center}
+#avisoInativo b{font-size:1.1rem}#avisoInativo p{color:#475569;margin:8px 0 16px}#avisoInativo #aiSeg{font-weight:800;color:#b3261e}
 /* Mostrar/ocultar senha */
 .pw-wrap{position:relative;display:block}
 .pw-wrap input{padding-right:46px!important;width:100%}
@@ -989,7 +993,8 @@ async function call(acao, dados, silencioso){
   try { return await rodar('api', S.token, acao, dados||{}); }
   catch(e){
     const m=msgErro(e);
-    if(m.indexOf('SESSAO_OUTRO')>-1){ sairLocal(); setTimeout(()=>abrirModal('<h2>Sessão encerrada</h2><p>Seu login foi usado para entrar em <b>outro aparelho ou navegador</b>. Por segurança, só é permitido um acesso por vez, e esta sessão foi encerrada.</p><p class="sm mut">Se não foi você, entre novamente e troque sua senha no menu do seu perfil.</p><div class="m-acoes"><button class="btn pri" onclick="fecharModal()">Entendi</button></div>'),150); }
+    if(m.indexOf('SESSAO_INATIVA')>-1){ desconectarInativo(); }
+    else if(m.indexOf('SESSAO_OUTRO')>-1){ sairLocal(); setTimeout(()=>abrirModal('<h2>Sessão encerrada</h2><p>Seu login foi usado para entrar em <b>outro aparelho ou navegador</b>. Por segurança, só é permitido um acesso por vez, e esta sessão foi encerrada.</p><p class="sm mut">Se não foi você, entre novamente e troque sua senha no menu do seu perfil.</p><div class="m-acoes"><button class="btn pri" onclick="fecharModal()">Entendi</button></div>'),150); }
     else if(m.indexOf('SESSAO')>-1){ sairLocal(); toast('Sessão encerrada. Entre novamente.'); }
     else if(m.indexOf('TROCAR_SENHA')>-1){ telaTrocaObrigatoria(); }
     else if(!silencioso) toast(m,'err');
@@ -1012,6 +1017,34 @@ function olhosSenha(raiz){
 }
 new MutationObserver(()=>olhosSenha()).observe(document.documentElement,{childList:true,subtree:true});
 document.addEventListener('DOMContentLoaded',()=>olhosSenha());
+/* ---------- Desconexão por inatividade (15 minutos) ---------- */
+const INATIVO_MS=15*60*1000, AVISO_MS=14*60*1000;
+let ULT_ATIV=Date.now(), AVISO_ON=false;
+function marcarAtividade(){ if(AVISO_ON) return; ULT_ATIV=Date.now(); }
+['mousemove','mousedown','keydown','scroll','touchstart','wheel','input'].forEach(ev=>window.addEventListener(ev, marcarAtividade, {passive:true, capture:true}));
+function fecharAvisoInativo(){ const a=document.getElementById('avisoInativo'); if(a) a.remove(); AVISO_ON=false; }
+function desconectarInativo(){
+  if(!S.token && !document.getElementById('lgU')) return;
+  const t=S.token; if(t) rodar('sair',t).catch(()=>{});
+  sairLocal();
+  setTimeout(()=>abrirModal('<h2>Sessão encerrada por inatividade</h2><p>Você ficou 15 minutos sem usar a plataforma e foi desconectado(a) por segurança. Entre novamente para continuar.</p><p class="sm mut">Dica: use “Salvar progresso” ou “Salvar rascunho” com frequência para não perder o que está escrevendo.</p><div class="m-acoes"><button class="btn pri" onclick="fecharModal()">Entendi</button></div>'),150);
+}
+function verificarInatividade(){
+  if(!S.token) return;
+  const parado=Date.now()-ULT_ATIV;
+  if(parado>=INATIVO_MS) return desconectarInativo();
+  if(parado>=AVISO_MS && !AVISO_ON){
+    AVISO_ON=true;
+    const d=document.createElement('div'); d.id='avisoInativo'; d.setAttribute('role','alertdialog');
+    d.innerHTML='<div class="ai-box"><b>Você ainda está aí?</b><p>Por inatividade, sua sessão será encerrada em <span id="aiSeg">60</span> segundos. O que não foi salvo será perdido.</p><button type="button" class="btn pri" id="aiOk">Continuar conectado</button></div>';
+    document.body.appendChild(d);
+    $('#aiOk').onclick=()=>{ fecharAvisoInativo(); ULT_ATIV=Date.now(); call('notificacoes',{},true).catch(()=>{}); };
+  }
+  if(AVISO_ON){ const e=$('#aiSeg'); if(e) e.textContent=Math.max(0, Math.ceil((INATIVO_MS-parado)/1000)); }
+}
+setInterval(verificarInatividade, 1000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) verificarInatividade(); });
+
 function abrirModal(html){ $('#modal-box').innerHTML=html; $('#modal').classList.remove('hidden'); const f=$('#modal-box input,#modal-box textarea'); if(f) f.focus(); }
 function fecharModal(){ $('#modal').classList.add('hidden'); $('#modal-box').innerHTML=''; $('#modal-box').classList.remove('largo'); }
 function confirmar(titulo, texto, rotulo, fn){
@@ -1058,7 +1091,7 @@ function telaLogin(){
    '<p class="mut sm">'+esc(S.programa)+' · Fiocruz / SEMS Dourados-MS</p>'+
    '<div class="fld"><label class="lbl" for="lgU">Usuário</label><input type="text" id="lgU" autocomplete="username" autocapitalize="none"></div>'+
    '<div class="fld"><label class="lbl" for="lgS">Senha</label><input type="password" id="lgS" autocomplete="current-password"></div>'+
-   '<label class="lembrar"><input type="checkbox" id="lgL"'+(NO_APP?' checked':'')+'> Manter conectado neste aparelho</label>'+
+   '<p class="mut sm" style="margin:2px 0 4px">🔒 Por segurança, a sessão é encerrada após 15 minutos sem uso.</p>'+
    '<div class="erro-m" id="lgE"></div>'+
    '<button type="button" class="btn pri" style="width:100%;margin-top:8px" id="lgB">Entrar</button>'+
    '<p class="mut sm" style="margin-top:14px">Esqueceu a senha? Solicite a redefinição à supervisão de preceptoria.</p><p class="sm" style="margin-top:6px"><a href="#" onclick="telaMeta4Publica();return false">Registrar atividade ou reunião da Meta 4 sem login →</a></p></div></div>';
@@ -1078,6 +1111,7 @@ async function fazerLogin(){
 }
 
 async function iniciar(){
+  ULT_ATIV=Date.now(); fecharAvisoInativo();
   let r;
   try{ r=await call('init',{},true); }catch(e){ if(!S.token) return; sairLocal(); return; }
   r.url = window.PAGINA_EXTERNA ? location.origin+location.pathname : r.url;
@@ -1087,7 +1121,7 @@ async function iniciar(){
   clearInterval(S.poll); S.poll=setInterval(atualizarSino, 120000);
 }
 
-function sairLocal(){ clearInterval(S.poll); store('tk',null); S.token=null; S.eu=null; fecharModal(); telaLogin(); }
+function sairLocal(){ clearInterval(S.poll); fecharAvisoInativo(); store('tk',null); S.token=null; S.eu=null; fecharModal(); telaLogin(); }
 function sair(){ const t=S.token; rodar('sair',t).catch(()=>{}); sairLocal(); }
 
 function telaTrocaObrigatoria(){
