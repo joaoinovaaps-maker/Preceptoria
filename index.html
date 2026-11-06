@@ -476,6 +476,7 @@ table.tab-aud,table.tab-vigi{width:100%;border-collapse:collapse;font-size:.86re
 .notif.lemb{border-left:4px solid #c9932f;background:#fbf4e6}
 .oc{display:inline-block;border-radius:999px;padding:1px 8px;font-size:.72rem;font-weight:700;background:#f6e0db;color:#a33b2b}.oc-atraso,.oc-saida_antecipada{background:#f8ecd2;color:#9a6a12}
 .ata-ant{border-left:5px solid #a85b5b;background:#fffaf6}.ata-ant summary{cursor:pointer;list-style:revert}.ata-h{margin:10px 0 6px;font-size:.92rem;color:#a85b5b}
+#vpBox .kpi small{display:block;margin-top:4px;line-height:1.35}
 /* Termo e guia */
 .termo{max-height:46vh;overflow:auto;border:1px solid var(--bd);border-radius:12px;padding:6px 14px;background:#fbf8f4;font-size:.9rem;line-height:1.5}
 .termo h3{font-size:.95rem;margin:12px 0 4px}.termo ul{padding-left:18px;margin:4px 0}
@@ -802,6 +803,22 @@ const FORMS = {
     {id:'documentos', label:'Outros materiais', tipo:'anexos', aceita:'image/*,application/pdf', max:10, ajuda:'PDF ou imagem, até 10 arquivos (PDF de até 10 MB). Ex.: apresentação, fotos do quadro, lista de presença. Arquivos do Word ou PowerPoint: salve como PDF antes de enviar.'}
   ]},
 
+  VIGI: { campos: [
+    {tipo:'bloco', label:'Período', orient:'Registre <b>apenas números</b>. Não escreva nomes, CNS ou endereços de pacientes: a lista nominal fica no PEC e na planilha da equipe.'},
+    {id:'situacao', label:'Como foi o período de vigilância?', tipo:'chips', opcoes:['Realizado','Parcial','Cancelado'], padrao:'Realizado', obrig:true},
+    {id:'motivo', label:'Motivo (parcial ou cancelado)', tipo:'select', opcoes:['Demanda espontânea / cobertura do acolhimento','Falta de profissional na equipe','Reunião ou atividade não programada','Problema de sistema (PEC/internet)','Outro'], mostrarSe:['situacao',['Parcial','Cancelado']]},
+    {id:'horas', label:'Horas dedicadas à vigilância', tipo:'num', passo:'0.5', obrig:true, padrao:'2', mostrarSe:['situacao',['Realizado','Parcial']], ajuda:'Ex.: 2 para um turno de 2 horas; 1,5 se parte do tempo foi usada em outra demanda.'},
+    {id:'equipe', label:'Equipe', tipo:'select', opcoes:['ESF 59 – Ipê Rosa','ESF 60 – Ipê Amarelo','ESF 61 – Ipê Branco','eMulti','Toda a UBS'], obrig:true},
+    {id:'indicador', label:'Indicador ou foco trabalhado', tipo:'select', opcoes:['C2','C3','C4','C5','C6','C7','Notificação / investigação de agravo','Busca ativa de faltosos','Outro'], obrig:true, ajuda:'C2 Desenvolvimento infantil · C3 Gestação e puerpério · C4 Diabetes · C5 Hipertensão · C6 Pessoa idosa · C7 Prevenção do câncer.'},
+    {tipo:'bloco', label:'Produção (somente números)', mostrarSe:['situacao',['Realizado','Parcial']]},
+    {id:'lista', label:'Pessoas pendentes na lista analisada', tipo:'num', mostrarSe:['situacao',['Realizado','Parcial']], ajuda:'Total de pessoas com boa prática pendente no relatório usado hoje (planilha da Vigilância ou PEC).'},
+    {id:'tentados', label:'Pessoas com contato tentado', tipo:'num', mostrarSe:['situacao',['Realizado','Parcial']]},
+    {id:'contatados', label:'Pessoas efetivamente contatadas', tipo:'num', mostrarSe:['situacao',['Realizado','Parcial']]},
+    {id:'agendados', label:'Pessoas agendadas', tipo:'num', mostrarSe:['situacao',['Realizado','Parcial']]},
+    {id:'visitas', label:'Visitas solicitadas ao ACS', tipo:'num', mostrarSe:['situacao',['Realizado','Parcial']]},
+    {id:'notificacoes', label:'Fichas de notificação preenchidas', tipo:'num', mostrarSe:['situacao',['Realizado','Parcial']]},
+    {id:'acoes', label:'O que foi feito (sem dados de pacientes)', tipo:'textarea', linhas:3, ph:'Ex.: análise da lista de C4 da ESF 60; ligações e mensagens; pactuado mutirão de pé diabético.'}
+  ]},
   TEORICO: { campos: [
     {id:'tema', label:'Tema', tipo:'text', obrig:true},
     {id:'facilitador', label:'Facilitador(es)', tipo:'text', ph:'Quem conduziu o encontro'},
@@ -901,6 +918,7 @@ const DESCR = {
   PI:'Projeto de intervenção (guia LAB INOVAAPS), por etapas, com PDF em ABNT.',
   ATA:'Atas das reuniões de preceptores e de equipe, com lista de presença e assinatura dos participantes.',
   CANAL:'Registro dos encontros de canal de núcleo, com envio de documentos e materiais. Pode ser compartilhado com outros núcleos.',
+  VIGI:'Registro numérico de cada período de vigilância: horas, pessoas abordadas, agendadas e notificações. Alimenta o painel da vigilância.',
   TEORICO:'Encontros do canal teórico, abertos a todos os residentes, com ata, artigos e materiais discutidos.',
   documentos:'Documentos enviados para sua assinatura e histórico dos documentos assinados.',
   META4:'Registro de reuniões e atividades em grupo (fotos, lista de presença ou ata) para o relatório da Meta 4.',
@@ -920,6 +938,7 @@ const MENU = [
   {id:'PI', nome:'Projeto de intervenção', perfis:LEITORES.concat(['residente']), g:'Principal', c:'#b7832f', c2:'#f6ecd6', d:'Guia LAB InovaAPS e PDF ABNT'},
   {id:'ATA', nome:'Atas de reunião', perfis:LEITORES.concat(['residente','colaborador']), g:'Reuniões e registros', c:'#a85b5b', c2:'#f4e1df', d:'Reuniões de preceptores e de equipe'},
   {id:'documentos', nome:'Meus documentos', perfis:['residente','colaborador'], g:'Principal', c:'#946b3f', c2:'#f3e8db', d:'Assinaturas pendentes e histórico'},
+  {id:'VIGI', nome:'Período de vigilância', perfis:LEITORES.concat(['residente']), g:'Rotina', c:'#7b6a2f', c2:'#efebd6', d:'Horas, abordagens e resultados'},
   {id:'TEORICO', nome:'Canal teórico', perfis:LEITORES.concat(['residente']), g:'Reuniões e registros', c:'#556b47', c2:'#e6ecdf', d:'Encontros abertos a todos os residentes'},
   {id:'CANAL', nome:'Canal de núcleo', perfis:LEITORES.concat(['residente']), g:'Reuniões e registros', c:'#5f7f6a', c2:'#e3ece5', d:'Encontros e materiais por núcleo'},
   {id:'SUPERVISAO', nome:'Feedback da supervisão', perfis:LEITORES, g:'Reuniões e registros', c:'#9a3f2a', c2:'#f3dfd8', d:'Supervisor técnico com preceptor'},
@@ -952,6 +971,7 @@ const ICONES = {
   escalas:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h2M14 14h2M8 18h2"/>',
   painel:'<path d="M3 3v18h18"/><path d="M7 16v-5M12 16V8M17 16v-9"/>',
   usuarios:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/>',
+  VIGI:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
   auditoria:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
   busca:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   vigilancia:'<path d="M3 3v18h18"/><path d="M7 16v-5M12 16V8M17 16v-9"/>',
@@ -1283,7 +1303,7 @@ function view(html){ const v=$('#view'); v.oninput=null; v.onchange=null; v.inne
 function ir(rota, params){
   if(['inicio','painel','usuarios','frequencia','escalas','documentos','auditoria'].indexOf(rota)>-1 || FORMS[rota]) S.ultimaLista=rota;
   S.rota=rota; S.params=params||{};
-  const ativo = rota==='meta4rel' ? 'META4' : FORMS[rota] || ['inicio','painel','usuarios','frequencia','escalas','documentos','auditoria'].indexOf(rota)>-1 ? rota : (S.params.tipo || S.ultimaLista);
+  const ativo = rota==='meta4rel' ? 'META4' : rota==='vigipainel' ? 'VIGI' : FORMS[rota] || ['inicio','painel','usuarios','frequencia','escalas','documentos','auditoria'].indexOf(rota)>-1 ? rota : (S.params.tipo || S.ultimaLista);
   $$('#tabs .nv[data-r]').forEach(b=>b.classList.toggle('on', b.dataset.r===ativo));
   const mAt=MENU.find(m=>m.id===ativo); const tt=$('#topTit'); if(tt) tt.textContent=mAt?mAt.nome:'Plataforma da Preceptoria';
   menuLateral(false);
@@ -1294,6 +1314,7 @@ function ir(rota, params){
   if(rota==='escalas') return vEscalas();
   if(rota==='documentos') return vDocumentos();
   if(rota==='auditoria') return vAuditoria();
+  if(rota==='vigipainel') return vVigiPainel();
   if(rota==='busca') return vBusca(S.params);
   if(rota==='meta4rel') return vRelMeta4();
   if(rota==='editar') return vEditar(S.params);
@@ -1330,7 +1351,7 @@ function minhaPendencia(r){ return r.assinaturas.some(a=>a.usuario_id===S.eu.id 
 function podeAbrir(r){
   if(r.autor_id===S.eu.id || r.residente_id===S.eu.id) return true;
   if((r.compartilhado||[]).indexOf(S.eu.id)>-1) return true;
-  if(r.tipo==='CANAL' || r.tipo==='TEORICO') return true;   // o servidor só lista o que a pessoa pode ver
+  if(r.tipo==='CANAL' || r.tipo==='TEORICO' || r.tipo==='VIGI') return true;   // o servidor só lista o que a pessoa pode ver
   if(r.assinaturas.some(a=>a.usuario_id===S.eu.id)) return true;
   if(r.tipo==='FEEDBACK' || r.tipo==='SUPERVISAO') return false;
   return GESTAO.indexOf(S.eu.perfil)>-1;
@@ -1421,6 +1442,43 @@ async function carregarVigi(){
   $('#vgEq').onchange=e=>{ S.vigiEq=e.target.value; pinta(); }; pinta();
 }
 
+/* ======================= PAINEL DO PERÍODO DE VIGILÂNCIA ======================= */
+async function vVigiPainel(){
+  S.vpMes=S.vpMes||mesAtual();
+  view('<div class="pg-head"><div class="pg-tit">'+bolha('VIGI')+'<div><h1>Painel da vigilância</h1><p class="mut sm">Tempo dedicado, produção e resultado dos períodos de vigilância'+(GESTAO.indexOf(S.eu.perfil)>-1?' da unidade':S.eu.perfil==='preceptor'?' seus e dos seus residentes':'')+'.</p></div></div>'+
+    '<div style="display:flex;gap:8px"><button class="btn" onclick="ir(\'VIGI\')">Registros</button><button class="btn pri" onclick="ir(\'editar\',{tipo:\'VIGI\'})">+ Registrar período</button></div></div>'+
+    '<div class="filtros"><label>Mês<input type="month" id="vpMes" value="'+S.vpMes+'"></label></div><div id="vpBox"><div class="vazio">Carregando…</div></div>');
+  $('#vpMes').onchange=e=>{ S.vpMes=e.target.value||mesAtual(); vVigiPainel(); };
+  let r; try{ r=await call('vigiPainel',{mes:S.vpMes}); }catch(e){ return; }
+  const box=$('#vpBox'); if(!box) return;
+  const T=r.total, pct=(a,b)=>b?Math.round(a/b*100)+'%':'—', dec=n=>n===null||n===undefined?'—':String(Math.round(n*10)/10).replace('.',',');
+  const kpi=(rot,v,sub)=>'<div class="kpi"><span>'+rot+'</span><b>'+v+'</b>'+(sub?'<small>'+sub+'</small>':'')+'</div>';
+  const cumpr=T.programadas?Math.round(T.horas/T.programadas*100):null;
+  let h='<h3 class="sec-t">1. Tempo dedicado</h3><div class="grid g4">'+
+    kpi('Horas programadas na escala',dec(T.programadas)+' h','turnos “Vigilância” do mês, sem feriados, férias e estágios')+
+    kpi('Horas realizadas',dec(T.horas)+' h',T.registros+' registro(s)')+
+    kpi('Cumprimento do período protegido',cumpr===null?'—':cumpr+'%',cumpr===null?'sem horas programadas':(cumpr>=80?'meta sugerida ≥ 80% · atingida':'meta sugerida ≥ 80%'))+
+    kpi('Períodos perdidos',(T.cancelados+T.parciais),T.cancelados+' cancelado(s) · '+T.parciais+' parcial(is)')+'</div>'+
+    (Object.keys(r.motivos).length?'<div class="card" style="margin-top:10px"><b>Motivos de perda do período</b><ul class="chk">'+Object.entries(r.motivos).sort((a,b)=>b[1]-a[1]).map(x=>'<li>'+esc(x[0])+': <b>'+x[1]+'</b></li>').join('')+'</ul></div>':'')+
+    '<h3 class="sec-t">2. Produção</h3><div class="grid g4">'+
+    kpi('Pessoas abordadas (contato tentado)',T.tentados,'produtividade: '+(T.horas?dec(T.tentados/T.horas):'—')+' por hora')+
+    kpi('Taxa de contato',pct(T.contatados,T.tentados),T.contatados+' contatadas')+
+    kpi('Taxa de agendamento',pct(T.agendados,T.contatados),T.agendados+' agendadas')+
+    kpi('Visitas ao ACS · notificações',T.visitas+' · '+T.notificacoes,'solicitações e fichas')+'</div>'+
+    '<h3 class="sec-t">3. Resultado por equipe e indicador</h3>'+
+    (r.porIndicador.length?'<div class="card" style="padding:0;overflow-x:auto"><table class="tab-aud"><thead><tr><th>Equipe</th><th>Indicador</th><th>Horas</th><th>Abordadas</th><th>Agendadas</th><th>Pendentes (início → fim do mês)</th><th>Saldo</th><th>Pontos (mês anterior → atual)</th><th>Pontos por 10 h</th></tr></thead><tbody>'+
+      r.porIndicador.map(x=>'<tr><td>'+esc(x.equipe)+'</td><td><b>'+esc(x.indicador)+'</b></td><td>'+dec(x.horas)+'</td><td>'+x.tentados+'</td><td>'+x.agendados+'</td><td>'+(x.pendIni===null?'—':x.pendIni+' → '+x.pendFim)+'</td>'+
+        '<td>'+(x.saldo===null?'—':'<b class="'+(x.saldo>0?'up':x.saldo<0?'down':'')+'">'+(x.saldo>0?x.saldo+' resolvida(s)':x.saldo<0?Math.abs(x.saldo)+' a mais':'sem mudança')+'</b>')+'</td>'+
+        '<td>'+(x.pontosAnt===null&&x.pontosMes===null?'—':dec(x.pontosAnt)+' → '+dec(x.pontosMes))+(x.delta!==null?' <b class="'+(x.delta>0?'up':x.delta<0?'down':'')+'">('+(x.delta>0?'+':'')+dec(x.delta)+')</b>':'')+'</td>'+
+        '<td><b>'+(x.pontos10h===null?'—':(x.pontos10h>0?'+':'')+dec(x.pontos10h))+'</b></td></tr>').join('')+'</tbody></table></div>'+
+      '<p class="mut sm">Saldo: pendentes informados no primeiro registro do mês menos os do último (positivo = pendências resolvidas). Pontos: resultado do indicador da equipe no site da Vigilância'+(r.temVigilancia?'':' (ainda sem resultados enviados)')+'. Pontos por 10 h = variação de pontos ÷ (horas de vigilância ÷ 10).</p>'
+      :'<div class="card vazio">Nenhum período de vigilância registrado neste mês.</div>')+
+    '<h3 class="sec-t">Por pessoa</h3><div class="card" style="padding:0;overflow-x:auto"><table class="tab-aud"><thead><tr><th>Pessoa</th><th>Programadas</th><th>Realizadas</th><th>Cumprimento</th><th>Perdidos</th><th>Abordadas</th><th>Por hora</th><th>Contato</th><th>Agendamento</th><th>Notif.</th></tr></thead><tbody>'+
+      r.porPessoa.map(p=>'<tr><td><b>'+esc(p.nome)+'</b><br><small class="mut">'+esc((PERFIL_NOME[p.perfil]||p.perfil)+(p.ano?' '+p.ano:'')+(p.categoria?' · '+p.categoria:''))+'</small></td><td>'+dec(p.programadas)+' h</td><td>'+dec(p.horas)+' h</td>'+
+        '<td>'+(p.programadas?'<span class="chip '+(p.horas/p.programadas>=0.8?'st-assinado':'st-aguardando')+'">'+pct(p.horas,p.programadas)+'</span>':'—')+'</td><td>'+(p.cancelados+p.parciais||'—')+'</td><td>'+p.tentados+'</td><td>'+(p.horas?dec(p.tentados/p.horas):'—')+'</td><td>'+pct(p.contatados,p.tentados)+'</td><td>'+pct(p.agendados,p.contatados)+'</td><td>'+p.notificacoes+'</td></tr>').join('')+'</tbody></table></div>';
+  box.innerHTML=h;
+}
+
 /* ======================= BUSCA GERAL ======================= */
 async function vBusca(p){
   const q=(p&&p.q)||''; const f=document.querySelector('.busca-top input'); if(f) f.value=q;
@@ -1482,7 +1540,7 @@ async function vLista(tipo){
   const porMes = ['PI','PDI'].indexOf(tipo)===-1;
   if(S.filtros[tipo]===undefined) S.filtros[tipo] = porMes ? mesAtual() : '';
   view('<div class="pg-head"><div class="pg-tit">'+bolha(tipo)+'<div><h1>'+esc(S.tipos[tipo].nome)+'</h1><p class="mut sm">'+esc(DESCR[tipo])+'</p></div></div>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+(tipo==='META4'&&GESTAO.indexOf(S.eu.perfil)>-1?'<button class="btn" onclick="ir(\'meta4rel\')">Gerar relatório</button>':'')+(podeCriar?'<button class="btn pri" onclick="ir(\'editar\',{tipo:\''+tipo+'\'})">+ Novo registro</button>':'')+'</div></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+(tipo==='VIGI'?'<button class="btn" onclick="ir(\'vigipainel\')">Painel da vigilância</button>':'')+(tipo==='META4'&&GESTAO.indexOf(S.eu.perfil)>-1?'<button class="btn" onclick="ir(\'meta4rel\')">Gerar relatório</button>':'')+(podeCriar?'<button class="btn pri" onclick="ir(\'editar\',{tipo:\''+tipo+'\'})">+ Novo registro</button>':'')+'</div></div>'+
     '<div class="filtros"><label>Mês<input type="month" id="fMes" value="'+S.filtros[tipo]+'"></label>'+
     '<button class="btn sm" id="fTodos">Todos os meses</button></div><div id="lista"><div class="vazio">Carregando…</div></div>');
   $('#fMes').onchange=e=>{ S.filtros[tipo]=e.target.value; carregarLista(tipo); };
@@ -1533,6 +1591,7 @@ function campoHTML(c, v){
   const abre='<div class="fld" id="w_'+c.id+'">';
   if(c.tipo==='text') return abre+rotulo(c,id)+'<input type="text" id="'+id+'" value="'+esc(v||'')+'"'+ph+'>'+ajuda+'</div>';
   if(c.tipo==='date') return abre+rotulo(c,id)+'<input type="date" id="'+id+'" value="'+esc(v||'')+'">'+ajuda+'</div>';
+  if(c.tipo==='num') return abre+rotulo(c,id)+'<input type="number" min="0" step="'+(c.passo||1)+'" inputmode="decimal" id="'+id+'" value="'+esc(v===undefined||v===null?'':v)+'"'+ph+'>'+ajuda+'</div>';
   if(c.tipo==='month') return abre+rotulo(c,id)+'<input type="month" id="'+id+'" value="'+esc(v||'')+'">'+ajuda+'</div>';
   if(c.tipo==='textarea') return abre+rotulo(c,id)+'<textarea id="'+id+'" rows="'+(c.linhas||4)+'"'+ph+(c.max?' maxlength="'+c.max+'"':'')+'>'+esc(v||'')+'</textarea>'+(c.max?'<div class="mut sm" style="text-align:right">até '+c.max+' caracteres</div>':'')+(c.contar?'<div class="count" id="cnt_'+c.id+'"></div>':'')+ajuda+'</div>';
   if(c.tipo==='faces') return abre+rotulo(c)+'<div class="faces" id="'+id+'">'+FACE_ROTULOS.map((r,i)=>'<label class="face"><input type="radio" name="'+id+'" value="'+esc(r)+'"'+(v===r?' checked':'')+'><span><img src="'+FACE_IMG[i]+'" alt=""><small>'+esc(r)+'</small></span></label>').join('')+'</div>'+ajuda+'</div>';
@@ -1884,9 +1943,9 @@ async function vEditar(p){
   }
 
   let bt='<button class="btn" onclick="voltar()">Cancelar</button>';
-  if(tipo!=='PI' || S.edit.souAutor) bt+='<button class="btn dng'+(p.id?'':' hidden')+'" id="btExcl" onclick="excluirReg(S.edit.id)">'+(['CANAL','TEORICO','META4','PI'].indexOf(tipo)>-1?'Excluir':'Excluir rascunho')+'</button>';
+  if(tipo!=='PI' || S.edit.souAutor) bt+='<button class="btn dng'+(p.id?'':' hidden')+'" id="btExcl" onclick="excluirReg(S.edit.id)">'+(['CANAL','TEORICO','META4','PI','VIGI'].indexOf(tipo)>-1?'Excluir':'Excluir rascunho')+'</button>';
   if(tipo==='PI') bt+='<button class="btn" onclick="salvarReg(\'parcial\')">Salvar progresso</button>'+(S.edit.souAutor?'<button class="btn pri" onclick="salvarReg(\'concluir\')">Concluir projeto</button>':'');
-  else if(tipo==='CANAL' || tipo==='TEORICO' || tipo==='META4') bt+='<button class="btn pri" onclick="salvarReg(\'registrar\')">'+(tipo==='META4'?'Enviar registro':'Registrar')+'</button>';
+  else if(tipo==='CANAL' || tipo==='TEORICO' || tipo==='META4' || tipo==='VIGI') bt+='<button class="btn pri" onclick="salvarReg(\'registrar\')">'+(tipo==='META4'?'Enviar registro':'Registrar')+'</button>';
   else bt+='<button class="btn" onclick="salvarReg(\'rascunho\')">Salvar rascunho</button><button class="btn pri" onclick="salvarReg(\'enviar\')">Assinar e enviar</button>';
   view(h+'<div class="barra-acoes no-print">'+bt+'</div>');
 
@@ -2005,6 +2064,7 @@ function coletar(){
   if(tipo==='META4') d.titulo=(conteudo.tipo_ativ==='Outro'?(conteudo.tipo_outro||'Outra atividade'):(conteudo.tipo_ativ||'Atividade'))+' — '+dataBr(d.data);
   if(tipo==='CANAL') d.titulo='Canal de núcleo — '+(conteudo.nucleo||'')+((conteudo.nucleos_comp||[]).length?' + '+conteudo.nucleos_comp.join(', '):'')+(conteudo.tema?': '+conteudo.tema:'');
   if(tipo==='TEORICO') d.titulo='Canal teórico'+(conteudo.tema?' — '+conteudo.tema:'');
+  if(tipo==='VIGI') d.titulo='Vigilância — '+(conteudo.indicador||'')+(conteudo.equipe?' · '+conteudo.equipe:'')+(conteudo.situacao&&conteudo.situacao!=='Realizado'?' ('+conteudo.situacao.toLowerCase()+')':'');
   if(tipo==='ATA') d.titulo='Ata — '+(conteudo.tipo_reuniao||'Reunião de preceptores')+(conteudo.tipo_reuniao==='Reunião de equipe'&&conteudo.equipe?' ('+conteudo.equipe+')':'')+' — '+dataBr(d.data);
   return {d:d, campos:campos};
 }
