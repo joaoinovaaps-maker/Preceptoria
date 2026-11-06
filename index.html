@@ -3369,7 +3369,31 @@ async function vSugestoes(){
 async function sugStatus(id,st){ try{ await call('sugestaoStatus',{id:id,status:st},true); toast('Situação atualizada.','ok'); }catch(e){} }
 
 /* ======================= FREQUÊNCIA: FOLHA EM FOTO ======================= */
-const FL={mes:null, dados:null, edit:null, thumbs:{}};
+const FL={mes:null, dados:null, edit:null, thumbs:{}, pdfs:{}};
+/* PDF: abre com pdf.js e devolve as páginas como imagens (JPEG) para leitura e, se preciso, para compressão */
+async function flPdfPaginas(dados, aviso){
+  if(!window.pdfjsLib){ await carregarScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'); pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
+  const doc=await pdfjsLib.getDocument({data:dados}).promise, L=[];
+  for(let n=1;n<=Math.min(doc.numPages,20);n++){
+    if(aviso) aviso(n, doc.numPages);
+    const pg=await doc.getPage(n), v1=pg.getViewport({scale:1}), esc=1800/Math.max(v1.width,v1.height*0.66), vp=pg.getViewport({scale:esc});
+    const cv=document.createElement('canvas'); cv.width=Math.round(vp.width); cv.height=Math.round(vp.height);
+    const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,cv.width,cv.height);
+    await pg.render({canvasContext:g, viewport:vp}).promise;
+    L.push({url:cv.toDataURL('image/jpeg',0.82), w:cv.width, h:cv.height});
+  }
+  return L;
+}
+/* PDF grande: refaz um PDF leve com as páginas em JPEG (mantém o documento legível e dentro do limite) */
+async function flPdfLeve(paginas){
+  if(!window.jspdf) await carregarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  let doc=null;
+  for(const p of paginas){ const im=await flImagem(p.url), k=1300/Math.max(im.width,im.height), c=document.createElement('canvas'); c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height); const u=c.toDataURL('image/jpeg',0.6), o=c.width>c.height?'l':'p';
+    if(!doc) doc=new jspdf.jsPDF({orientation:o, unit:'pt', format:[c.width*0.6,c.height*0.6]}); else doc.addPage([c.width*0.6,c.height*0.6],o);
+    doc.addImage(u,'JPEG',0,0,c.width*0.6,c.height*0.6); }
+  return doc.output('datauristring').split(',')[1];
+}
 const FL_ST={enviada:'Aguardando conferência', confirmada:'Recebida pela secretaria', devolvida:'Devolvida para correção'};
 const FL_CHIP={enviada:'st-aguardando', confirmada:'st-assinado', devolvida:'st-rascunho'};
 function flMin(t){ const m=/^(\d{1,2}):(\d{2})$/.exec(String(t||'').trim()); return m && +m[1]<24 && +m[2]<60 ? (+m[1])*60+(+m[2]) : null; }
@@ -3399,10 +3423,10 @@ function flTelaResidente(){
   if(atual) h+='<div class="card"><div class="ul"><div><b>Folha de '+mesBr(FL.mes)+'</b><div class="reg-meta">Enviada em '+dataHoraBr(atual.enviado_em)+' · '+flHoras(atual.total_min)+' em '+atual.dias.length+' dia(s)</div></div><span class="chip '+FL_CHIP[atual.status]+'">'+FL_ST[atual.status]+'</span></div>'+
     (atual.status!=='enviada' && atual.conferido_por?'<p class="sm" style="margin:6px 0 0">'+(atual.status==='confirmada'?'Recebimento confirmado':'Devolvida')+' por '+esc(atual.conferido_por)+' em '+dataHoraBr(atual.conferido_em)+(atual.obs?' · <b>'+esc(atual.obs)+'</b>':'')+'</p>':'')+'</div>';
   if(trav) h+='<div class="card">'+flTabelaLeitura(atual)+'</div>';
-  else h+='<div class="card"><h3 class="sec" style="margin-top:0">1. Foto da folha de '+mesBr(FL.mes)+'</h3><p class="mut sm">Fotografe a folha <b>inteira e de frente</b> (celular paralelo à folha), com boa luz, sem sombra e sem cortar a tabela. A leitura funciona melhor com horários escritos em caneta azul. Até 4 fotos (por exemplo, frente e verso).</p>'+
-      '<div class="anx" id="flFotos"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><label class="btn sm pri anx-add"><input type="file" accept="image/*" capture="environment" onchange="flFoto(this)"> 📷 Tirar foto</label><label class="btn sm anx-add"><input type="file" accept="image/*" onchange="flFoto(this)"> 🖼️ Escolher da galeria</label></div></div>'+
-    '<div class="card"><h3 class="sec" style="margin-top:0">2. Horários do mês</h3><p class="mut sm">Use <b>Ler horários da foto</b> para preencher automaticamente e confira dia a dia: a leitura pode errar em letra manuscrita. Você também pode digitar os horários.</p>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button type="button" class="btn sm" id="flOcr" onclick="flLer()">🔎 Ler horários da foto</button><button type="button" class="btn sm" onclick="flLimpar()">Limpar tabela</button></div><div id="flOcrMsg" class="mut sm" style="margin-bottom:6px"></div>'+
+  else h+='<div class="card"><h3 class="sec" style="margin-top:0">1. Foto ou PDF da folha de '+mesBr(FL.mes)+'</h3><p class="mut sm">Fotografe a folha <b>inteira e de frente</b> (celular paralelo à folha), com boa luz, sem sombra e sem cortar a tabela. A leitura funciona melhor com horários escritos em caneta azul. Até 4 arquivos: fotos ou PDF digitalizado (por exemplo, folha, comunicação de ocorrências e atestados); a plataforma lê as páginas que têm a tabela de horários.</p>'+
+      '<div class="anx" id="flFotos"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><label class="btn sm pri anx-add"><input type="file" accept="image/*" capture="environment" onchange="flFoto(this)"> 📷 Tirar foto</label><label class="btn sm anx-add"><input type="file" accept="image/*" onchange="flFoto(this)"> 🖼️ Escolher da galeria</label><label class="btn sm anx-add"><input type="file" accept="application/pdf,.pdf" onchange="flFoto(this)"> 📄 Enviar PDF</label></div></div>'+
+    '<div class="card"><h3 class="sec" style="margin-top:0">2. Horários do mês</h3><p class="mut sm">Use <b>Ler horários do arquivo</b> para preencher automaticamente e confira dia a dia: a leitura pode errar em letra manuscrita. Você também pode digitar os horários.</p>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button type="button" class="btn sm" id="flOcr" onclick="flLer()">🔎 Ler horários do arquivo</button><button type="button" class="btn sm" onclick="flLimpar()">Limpar tabela</button></div><div id="flOcrMsg" class="mut sm" style="margin-bottom:6px"></div>'+
       '<div id="flTab"></div></div>'+
     '<div class="barra-acoes no-print"><button class="btn pri" onclick="flEnviar()">'+(atual?'Enviar novamente':'Enviar folha')+'</button></div>';
   const hist=minhas.filter(f=>f.mes!==FL.mes);
@@ -3413,20 +3437,36 @@ function flTelaResidente(){
 function flIrMes(m){ FL.mes=m; FL.edit=null; const i=$('#flMes'); if(i) i.value=m; flTelaResidente(); window.scrollTo(0,0); }
 function flPintarFotos(){
   const b=$('#flFotos'); if(!b) return; const E=FL.edit;
-  b.innerHTML=E.anexos.length ? E.anexos.map((id,i)=>'<span class="fl-foto">'+(FL.thumbs[id]?'<img src="'+FL.thumbs[id]+'" alt="Foto '+(i+1)+' da folha" onclick="abrirAnexo(\''+id+'\')">':'<button type="button" class="anx-pdf" onclick="abrirAnexo(\''+id+'\')">📷 Foto '+(i+1)+'</button>')+
+  b.innerHTML=E.anexos.length ? E.anexos.map((id,i)=>'<span class="fl-foto">'+(FL.pdfs[id]?'<button type="button" class="anx-pdf" onclick="abrirAnexo(\''+id+'\')">📄 PDF · '+FL.pdfs[id].paginas.length+' pág.</button>':FL.thumbs[id]?'<img src="'+FL.thumbs[id]+'" alt="Foto '+(i+1)+' da folha" onclick="abrirAnexo(\''+id+'\')">':'<button type="button" class="anx-pdf" onclick="abrirAnexo(\''+id+'\')">📷 Foto '+(i+1)+'</button>')+
     '<button type="button" class="x" title="Remover foto" onclick="flRemFoto('+i+')">×</button></span>').join('') : '<span class="mut sm">Nenhuma foto enviada ainda.</span>';
 }
 function flRemFoto(i){ FL.edit.anexos.splice(i,1); flPintarFotos(); }
 async function flFoto(input){
   const f=input.files && input.files[0]; input.value=''; if(!f) return;
-  if(FL.edit.anexos.length>=4) return toast('Limite de 4 fotos por folha.','err');
+  if(FL.edit.anexos.length>=4) return toast('Limite de 4 arquivos por folha.','err');
+  const pdf=f.type==='application/pdf' || /\.pdf$/i.test(f.name||'');
   try{
+    if(pdf){
+      if(f.size>60*1024*1024) return toast('PDF muito grande (máximo de 60 MB).','err');
+      const buf=new Uint8Array(await f.arrayBuffer());
+      toast('Abrindo o PDF…');
+      const pags=await flPdfPaginas(buf.slice(), (n,t)=>{ const m=$('#flOcrMsg'); if(m) m.textContent='Abrindo a página '+n+' de '+t+' do PDF…'; });
+      let b64;
+      if(f.size<=8*1024*1024){ let s2=''; for(let i=0;i<buf.length;i+=32768) s2+=String.fromCharCode.apply(null, buf.subarray(i,i+32768)); b64=btoa(s2); }
+      else { toast('PDF grande: gerando uma versão leve para envio…'); b64=await flPdfLeve(pags); }
+      toast('Enviando o PDF…');
+      const r=await call('enviarAnexo',{nome:(f.name||'folha.pdf').replace(/\.pdf$/i,'')+'.pdf', mime:'application/pdf', base64:b64},true);
+      FL.pdfs[r.id]={paginas:pags}; FL.edit.anexos.push(r.id); flPintarFotos();
+      const m=$('#flOcrMsg'); if(m) m.textContent='';
+      toast('PDF enviado ('+pags.length+' página(s)). Agora use “Ler horários do arquivo”.','ok'); return;
+    }
     const durl=await reduzir(await lerArquivo(f), 2200, .85);
     toast('Enviando a foto…');
     const r=await call('enviarAnexo',{nome:'folha_'+FL.mes+'.jpg', mime:'image/jpeg', base64:durl.split(',')[1]},true);
-    FL.thumbs[r.id]=durl; FL.edit.anexos.push(r.id); flPintarFotos(); toast('Foto enviada. Agora use “Ler horários da foto”.','ok');
-  }catch(e){ toast('Não foi possível enviar a foto: '+msgErro(e),'err'); }
+    FL.thumbs[r.id]=durl; FL.edit.anexos.push(r.id); flPintarFotos(); toast('Foto enviada. Agora use “Ler horários do arquivo”.','ok');
+  }catch(e){ toast('Não foi possível enviar o arquivo: '+msgErro(e),'err'); }
 }
+
 /* ---------- Leitura da folha de frequência: tinta da caneta + grade da tabela + rede de dígitos manuscritos ---------- */
 let FL_REDE=null;
 async function flRede(){
@@ -3487,6 +3527,17 @@ function flPar(R, m, cw, ch, x0, x1){
 }
 const FL_FAIXA=[[5,11],[9,14],[11,16],[14,23]];
 /* lê uma célula: separa hora e minutos pelo vão central e escolhe o horário válido mais provável para a coluna */
+/* endireita a escrita inclinada (cisalhamento pela inclinação média dos traços) */
+function flDesinclinar(m, cw, ch){
+  let n=0, sx=0, sy=0; for(let y=0;y<ch;y++) for(let x=0;x<cw;x++) if(m[y*cw+x]){ n++; sx+=x; sy+=y; }
+  if(n<20) return m;
+  const mx=sx/n, my=sy/n; let cxy=0, cyy=0;
+  for(let y=0;y<ch;y++) for(let x=0;x<cw;x++) if(m[y*cw+x]){ cxy+=(x-mx)*(y-my); cyy+=(y-my)*(y-my); }
+  const k=cyy?cxy/cyy:0; if(Math.abs(k)<0.08) return m;
+  const kk=Math.max(-0.6,Math.min(0.6,k)), o=new Uint8Array(cw*ch);
+  for(let y=0;y<ch;y++){ const d=Math.round(kk*(y-my)); for(let x=0;x<cw;x++) if(m[y*cw+x]){ const nx=x-d; if(nx>=0 && nx<cw) o[y*cw+nx]=1; } }
+  return o;
+}
 function flLerCelula(R, m, cw, ch, col){
   const cs=[]; for(let x=0;x<cw;x++){ let s=0; for(let y=0;y<ch;y++) s+=m[y*cw+x]; cs.push(s); }
   let B=[]; for(let x=0;x<cw;){ if(!cs[x]){ x++; continue; } let e=x, t=0; while(e<cw && cs[e]){ t+=cs[e]; e++; } B.push([x,e-1,t]); x=e; }
@@ -3510,7 +3561,7 @@ function flImagem(src){ return new Promise((ok,err)=>{ const im=new Image(); im.
 /* lê a folha inteira: devolve {dias:{d:{e1,s1,e2,s2}}, conferir:{d:[campos]}} */
 async function flLerFolha(src, ult, aviso){
   const R=await flRede();
-  const img=await flImagem(src), W=1400, H=Math.round(img.height*1400/img.width);
+  const img=await flImagem(src), W=Math.max(1400,Math.min(2000,img.width)), H=Math.round(img.height*W/img.width);
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const cx=cv.getContext('2d'); cx.drawImage(img,0,0,W,H);
   const px=cx.getImageData(0,0,W,H).data, N=W*H, lum=new Float32Array(N), azu=new Float32Array(N);
   for(let i=0;i<N;i++){ const r=px[i*4], g=px[i*4+1], b=px[i*4+2]; lum[i]=(r+g+b)/3; azu[i]=b-(r+g)/2; }
@@ -3518,12 +3569,25 @@ async function flLerFolha(src, ult, aviso){
   const azul=nT>N*0.004;   // caneta azul; se não houver, usa traços escuros (caneta preta)
   if(!azul) for(let i=0;i<N;i++) tinta[i]=lum[i]<110?1:0;
   const esc=new Uint8Array(N); for(let i=0;i<N;i++) esc[i]=(lum[i]<160 && !(azul && tinta[i]))?1:0;
-  // colunas da tabela
-  const y0=Math.round(H*0.3), y1=Math.round(H*0.8), pv=[];
-  for(let x=0;x<W;x++){ let s=0; for(let y=y0;y<y1;y++) s+=esc[y*W+x]; pv.push(s/(y1-y0)); }
-  const V=flGrupos(pv.map((v,x)=>v>0.4?x:-1).filter(x=>x>=0),4); if(V.length<6) throw new Error('A tabela da folha não foi encontrada na foto.');
-  let i0=0; while(i0<V.length-5 && V[i0+1]-V[i0]>0.16*W) i0++;
-  const XS=V.slice(i0+1,i0+6);
+  // colunas da tabela: procura, em várias faixas da página, 5 linhas verticais com 4 vãos parecidos (as colunas de horário)
+  let XS=null, melhorV=-1;
+  for(const [fa,fb] of [[0.2,0.4],[0.25,0.45],[0.3,0.5],[0.35,0.55],[0.4,0.6],[0.45,0.65],[0.5,0.7],[0.3,0.8]]) for(const lim of [0.4,0.3]){
+    const y0=Math.round(H*fa), y1=Math.round(H*fb), pv=[];
+    for(let x=0;x<W;x++){ let s=0; for(let y=y0;y<y1;y++) s+=esc[y*W+x]; pv.push(s/(y1-y0)); }
+    const V=flGrupos(pv.map((v,x)=>v>lim?x:-1).filter(x=>x>=0),4);
+    for(let i=0;i+4<V.length;i++) for(let j=i+1;j<V.length;j++){   // permite pular linhas espúrias (números impressos da coluna DIA)
+      const L=[V[i]]; let k=j, ok=true;
+      // monta a sequência gulosa de 5 linhas com vãos entre 7% e 16% da largura
+      let ult=V[i]; for(let q=i+1;q<V.length && L.length<5;q++){ const g=V[q]-ult; if(g>=0.07*W && g<=0.16*W){ L.push(V[q]); ult=V[q]; } else if(g>0.16*W) break; }
+      if(L.length<5) break;
+      const gs=[1,2,3,4].map(t=>L[t]-L[t-1]), mg=gs.reduce((a,b)=>a+b,0)/4;
+      if(gs.some(g=>Math.abs(g-mg)>0.22*mg)) break;
+      const sc=10-gs.reduce((a,g)=>a+Math.abs(g-mg),0)/mg+(lim===0.4?0.5:0);
+      if(sc>melhorV){ melhorV=sc; XS=L; }
+      break;
+    }
+  }
+  if(!XS) throw new Error('A tabela da folha não foi encontrada na foto.');
   // linhas da tabela (passo e início que melhor encaixam 31 dias)
   let ys=[]; for(let c=0;c<4;c++){ const a=XS[c]+4, b=XS[c+1]-4; for(let y=0;y<H;y++){ let s=0; for(let x=a;x<b;x++) s+=esc[y*W+x]; if(s/(b-a)>0.45) ys.push(y); } }
   ys=flGrupos(ys.sort((p,q)=>p-q),4);
@@ -3544,6 +3608,14 @@ async function flLerFolha(src, ult, aviso){
       // tira traços horizontais finos e longos (tracejado impresso), preservando o traço dos dígitos
       const alt=new Uint8Array(cw*ch); for(let x=0;x<cw;x++){ let y=0; while(y<ch){ if(!m[y*cw+x]){ y++; continue; } let e=y; while(e<ch && m[e*cw+x]) e++; for(let z=y;z<e;z++) alt[z*cw+x]=Math.min(255,e-y); y=e; } }
       for(let y=0;y<ch;y++){ let x=0; while(x<cw){ if(!m[y*cw+x]){ x++; continue; } let e=x; while(e<cw && m[y*cw+e]) e++; if(e-x>cw*0.22) for(let z=x;z<e;z++) if(alt[y*cw+z]<=3) m[y*cw+z]=0; x=e; } }
+      // traços finos e longos mesmo levemente inclinados (tracejado impresso em foto torta)
+      { const fino=new Uint8Array(cw*ch); for(let i=0;i<cw*ch;i++) fino[i]=m[i] && alt[i]<=3 ? 1 : 0;
+        const vis=new Uint8Array(cw*ch);
+        for(let s0=0;s0<cw*ch;s0++){ if(!fino[s0] || vis[s0]) continue; const fila=[s0]; vis[s0]=1; let k=0, xa0=1e9, xb0=-1, ya0=1e9, yb0=-1;
+          while(k<fila.length){ const q=fila[k++], qy=(q/cw)|0, qx=q%cw; if(qx<xa0)xa0=qx; if(qx>xb0)xb0=qx; if(qy<ya0)ya0=qy; if(qy>yb0)yb0=qy;
+            for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const yy=qy+dy, xx=qx+dx; if(yy<0||yy>=ch||xx<0||xx>=cw) continue; const z=yy*cw+xx; if(fino[z] && !vis[z]){ vis[z]=1; fila.push(z); } } }
+          const larg=xb0-xa0+1, altura=yb0-ya0+1;
+          if(larg>=cw*0.18 && altura<=Math.max(5,larg*0.15)) fila.forEach(z=>{ m[z]=0; }); } }
       // mantém só os traços cujo centro está dentro da linha do dia
       const lab=new Int32Array(cw*ch), ok=new Uint8Array(cw*ch); let nl=0, tot=0;
       for(let s0=0;s0<cw*ch;s0++){ if(!m[s0] || lab[s0]) continue; nl++; const fila=[s0]; lab[s0]=nl; let k=0, sy=0;
@@ -3584,20 +3656,27 @@ async function flLer(){
   if(!E.anexos.length) return toast('Envie primeiro a foto da folha.','err');
   if(bt) bt.disabled=true;
   try{
-    for(const id of E.anexos) if(!FL.thumbs[id]){ const a=await call('anexo',{id:id},true); FL.thumbs[id]='data:'+a.mime+';base64,'+a.base64; }
-    const ult=flUlt(FL.mes); let dias={}, conferir={}, lida=false;
-    // 1º: leitura da tabela (tinta da caneta + rede de dígitos manuscritos)
-    for(let i=0;i<E.anexos.length;i++){
-      try{ msg.textContent='Lendo a tabela da foto '+(i+1)+' de '+E.anexos.length+'…';
-        const r=await flLerFolha(FL.thumbs[E.anexos[i]], ult, d=>{ msg.textContent='Lendo a foto '+(i+1)+': dia '+d+' de '+ult+'…'; });
-        Object.keys(r.dias).forEach(d=>{ if(!dias[d]){ dias[d]=r.dias[d]; if(r.conferir[d]) conferir[d]=r.conferir[d]; } }); lida=true;
-      }catch(e){ console.warn('leitura por tabela', e); }
+    // imagens a ler: fotos e páginas dos PDFs (baixa do servidor o que não estiver no aparelho)
+    const fontes=[];
+    for(const id of E.anexos){
+      if(!FL.thumbs[id] && !FL.pdfs[id]){ const a=await call('anexo',{id:id},true);
+        if(a.mime==='application/pdf'){ const bin=atob(a.base64), u8=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i); FL.pdfs[id]={paginas:await flPdfPaginas(u8)}; }
+        else FL.thumbs[id]='data:'+a.mime+';base64,'+a.base64; }
+      if(FL.pdfs[id]) FL.pdfs[id].paginas.forEach((p,k)=>fontes.push({url:p.url, rot:'página '+(k+1)+' do PDF'})); else fontes.push({url:FL.thumbs[id], rot:'foto'});
+    }
+    const ult=flUlt(FL.mes); let dias={}, conferir={}, nTab=0;
+    // 1º: leitura da tabela (tinta da caneta + rede de dígitos manuscritos); páginas sem a tabela são ignoradas
+    for(let i=0;i<fontes.length;i++){
+      try{ msg.textContent='Procurando a tabela de horários ('+fontes[i].rot+', '+(i+1)+' de '+fontes.length+')…';
+        const r=await flLerFolha(fontes[i].url, ult, d=>{ msg.textContent='Lendo '+fontes[i].rot+' ('+(i+1)+' de '+fontes.length+'): dia '+d+' de '+ult+'…'; });
+        nTab++; Object.keys(r.dias).forEach(d=>{ if(!dias[d]){ dias[d]=r.dias[d]; if(r.conferir[d]) conferir[d]=r.conferir[d]; } });
+      }catch(e){ /* página sem a tabela (ocorrências, atestados…) */ }
     }
     // 2º (se a tabela não foi reconhecida): leitura do texto corrido
     if(!Object.keys(dias).length){
       msg.textContent='Carregando o leitor de texto…';
       if(!window.Tesseract) await carregarScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
-      let texto=''; for(let i=0;i<E.anexos.length;i++){ msg.textContent='Lendo o texto da foto '+(i+1)+'…'; const r=await Tesseract.recognize(FL.thumbs[E.anexos[i]],'por'); texto+='\n'+((r&&r.data&&r.data.text)||''); }
+      let texto=''; for(let i=0;i<fontes.length;i++){ msg.textContent='Lendo o texto ('+fontes[i].rot+')…'; const r=await Tesseract.recognize(fontes[i].url,'por'); texto+='\n'+((r&&r.data&&r.data.text)||''); }
       dias=flInterpretar(texto, ult); Object.keys(dias).forEach(d=>{ conferir[d]=['e1','s1','e2','s2']; });
     }
     const n=Object.keys(dias).length;
@@ -3605,7 +3684,7 @@ async function flLer(){
     E.dias={}; Object.keys(dias).forEach(d=>{ E.dias[d]=Object.assign({d:+d}, dias[d]); }); E.conferir=conferir; E.leitura='ocr';
     const nc=Object.keys(conferir).reduce((a,d)=>a+conferir[d].length,0);
     flPintarTabela();
-    msg.innerHTML='<b>'+n+' dia(s) lido(s) da foto.</b> '+(nc?'<span class="fl-conf-leg">'+nc+' horário(s) em amarelo</span> com leitura incerta: confira com atenção. ':'')+'Confira todas as linhas com a folha assinada antes de enviar.';
+    msg.innerHTML='<b>'+n+' dia(s) lido(s)'+(nTab>1?' em '+nTab+' páginas com tabela':'')+'.</b> '+(nc?'<span class="fl-conf-leg">'+nc+' horário(s) em amarelo</span> com leitura incerta: confira com atenção. ':'')+'Confira todas as linhas com a folha assinada antes de enviar.';
   }catch(e){ msg.textContent='A leitura automática não está disponível agora ('+msgErro(e)+'). Digite os horários na tabela.'; }
   finally{ const b=$('#flOcr'); if(b) b.disabled=false; }
 }
