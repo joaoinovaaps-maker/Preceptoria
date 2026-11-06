@@ -475,6 +475,7 @@ table.tab-aud,table.tab-vigi{width:100%;border-collapse:collapse;font-size:.86re
 .tab-vigi .up{color:#5d7a2e}.tab-vigi .down{color:#a33b2b}
 .notif.lemb{border-left:4px solid #c9932f;background:#fbf4e6}
 .oc{display:inline-block;border-radius:999px;padding:1px 8px;font-size:.72rem;font-weight:700;background:#f6e0db;color:#a33b2b}.oc-atraso,.oc-saida_antecipada{background:#f8ecd2;color:#9a6a12}
+.ata-ant{border-left:5px solid #a85b5b;background:#fffaf6}.ata-ant summary{cursor:pointer;list-style:revert}.ata-h{margin:10px 0 6px;font-size:.92rem;color:#a85b5b}
 /* Termo e guia */
 .termo{max-height:46vh;overflow:auto;border:1px solid var(--bd);border-radius:12px;padding:6px 14px;background:#fbf8f4;font-size:.9rem;line-height:1.5}
 .termo h3{font-size:.95rem;margin:12px 0 4px}.termo ul{padding-left:18px;margin:4px 0}
@@ -1867,6 +1868,7 @@ async function vEditar(p){
   }
   h+='<div class="row2"><div class="fld"><label class="lbl" for="f__data">'+(F.alvo?'Data de realização da atividade':'Data')+' <span class="req">*</span></label><input type="date" id="f__data" max="'+hoje()+'" value="'+esc(r.data)+'">'+(F.semana?'<div class="mut sm" id="seInfo"></div>':'')+'</div>'+
      '<div class="fld"><label class="lbl" for="f__hora">Horário</label><input type="time" id="f__hora" value="'+esc(r.hora||'')+'"></div></div>';
+  if(tipo==='ATA') h+='</div><div id="ataAnt" class="no-print"></div><div class="card" style="display:none">';
   const partHTML = !F.participantes ? '' : campoHTML({id:'_part', label:'Lista de presença — participantes (recebem a ata para assinatura)', tipo:'multi', fonte:['preceptor','supervisor','admin','gestor','residente','colaborador'], excluirEu:true, obrig:true, agrupar:true, ajuda:'Inclui preceptores, residentes, gestão e demais servidores cadastrados. Quem não tem cadastro pode ser listado no campo “Demais participantes”.'}, r.participantes);
   h+='</div>';
 
@@ -1906,6 +1908,43 @@ async function vEditar(p){
     res.addEventListener('change',()=>{ Object.keys(DEF).forEach(k=>{ const c=DEF[k]; if(c.tipo==='escala'&&c.porCategoria){ const v=lerCampo(c); $('#w_'+c.id).outerHTML=escalaHTML(c,v); } }); atualizarEscalas(); info(); });
     info(); }
   if(F.semana){ const se=()=>{ $('#seInfo').textContent=semanaEpi(val('f__data')); }; $('#f__data').addEventListener('change',se); se(); }
+  if(tipo==='ATA'){ S.ataAnt=null; carregarAtasAnteriores(); vw.addEventListener('change',e=>{ if(e.target && /f_tipo_reuniao|f_equipe/.test(e.target.name||e.target.id||'')) carregarAtasAnteriores(); }); }
+}
+/* ---------- Ata: consulta às atas anteriores ---------- */
+async function carregarAtasAnteriores(){
+  const box=$('#ataAnt'); if(!box) return;
+  const d={tipo_reuniao:lerCampo(DEF.tipo_reuniao)||'Reunião de preceptores', equipe:DEF.equipe?lerCampo(DEF.equipe):'', id:S.edit.id||'', antesDe:val('f__data')||hoje()};
+  box.innerHTML='<div class="card ata-ant"><b>Atas anteriores</b><p class="mut sm">Carregando…</p></div>';
+  let L=[]; try{ L=await call('atasAnteriores',d,true); }catch(e){ box.innerHTML=''; return; }
+  S.ataAnt=L; if(!$('#ataAnt')) return;
+  if(!L.length){ box.innerHTML='<div class="card ata-ant"><b>Atas anteriores · '+esc(d.tipo_reuniao)+(d.tipo_reuniao==='Reunião de equipe'&&d.equipe?' · '+esc(d.equipe):'')+'</b><p class="mut sm" style="margin:4px 0 0">Nenhuma ata anterior registrada para este tipo de reunião.</p></div>'; return; }
+  pintarAtaAnterior(0);
+}
+function pintarAtaAnterior(i){
+  const L=S.ataAnt||[], r=L[i], c=(r&&r.conteudo)||{}, box=$('#ataAnt'); if(!r||!box) return;
+  const pautas=(c.pautas||[]).filter(p=>p&&(p.pauta||p.encaminhamento));
+  const pend=pautas.filter(p=>p.encaminhamento||p.responsavel||p.prazo);
+  const nomesPart=[r.autor].concat((r.participantes||[]).map(nomeU)).filter(Boolean);
+  box.innerHTML='<details class="card ata-ant" open><summary><b>Ata anterior para consulta</b> <span class="mut sm">· '+dataBr(r.data)+(r.hora?' '+esc(r.hora):'')+' · relator(a): '+esc(r.autor)+'</span></summary>'+
+    '<div class="filtros" style="margin:8px 0"><label>Ver outra ata<select onchange="pintarAtaAnterior(Number(this.value))">'+L.map((x,k)=>'<option value="'+k+'"'+(k===i?' selected':'')+'>'+dataBr(x.data)+' · '+esc((x.conteudo||{}).tipo_reuniao||'Reunião de preceptores')+((x.conteudo||{}).equipe?' · '+esc(x.conteudo.equipe):'')+'</option>').join('')+'</select></label>'+'</div>'+
+    (pend.length?'<h4 class="ata-h">Pendências e encaminhamentos da reunião anterior</h4><div class="tab-wrap"><table class="tab-aud"><thead><tr><th>Pauta</th><th>Encaminhamento / decisão</th><th>Responsável</th><th>Prazo</th><th></th></tr></thead><tbody>'+
+      pend.map((p,k)=>'<tr><td>'+esc(p.pauta||'')+'</td><td>'+esc(p.encaminhamento||'')+'</td><td>'+esc(p.responsavel||'')+'</td><td>'+esc(p.prazo||'')+'</td><td><button type="button" class="btn sm" onclick="retomarPauta('+i+','+k+')">Retomar hoje</button></td></tr>').join('')+'</tbody></table></div>'
+      :'<p class="mut sm">A ata anterior não registrou encaminhamentos.</p>')+
+    (pautas.length>pend.length?'<p class="sm" style="margin:6px 0 0"><b>Outras pautas citadas:</b> '+pautas.filter(p=>pend.indexOf(p)===-1).map(p=>esc(p.pauta)).join(' · ')+'</p>':'')+
+    ((c.aus_prog||[]).length?'<p class="sm" style="margin:6px 0 0"><b>Ausências programadas:</b> '+c.aus_prog.map(a=>esc([a.data?dataBr(a.data):'',a.nome,a.motivo].filter(Boolean).join(' – '))).join(' · ')+'</p>':'')+
+    ([['inf_cob','Cobertura e estendido'],['inf_fer','Férias'],['inf_est','Estágios'],['inf_out','Outros informes']].filter(x=>c[x[0]]).map(x=>'<p class="sm" style="margin:6px 0 0;white-space:pre-line"><b>'+x[1]+':</b> '+esc(c[x[0]])+'</p>').join(''))+
+    '<p class="mut sm" style="margin:8px 0 0">Participantes: '+esc(nomesPart.join(', '))+'</p></details>';
+}
+/* leva um encaminhamento da ata anterior para as pautas de hoje */
+function retomarPauta(i,k){
+  const r=(S.ataAnt||[])[i]; if(!r) return; const p=((r.conteudo||{}).pautas||[]).filter(x=>x&&(x.pauta||x.encaminhamento)).filter(x=>x.encaminhamento||x.responsavel||x.prazo)[k]; if(!p) return;
+  const box=$('#f_pautas'); if(!box) return;
+  let alvo=Array.from(box.querySelectorAll('.cartao')).find(cd=>Array.from(cd.querySelectorAll('[data-c]')).every(el=>!el.value.trim()));
+  if(!alvo){ addCartao('pautas'); alvo=box.lastElementChild; }
+  const set=(c,v)=>{ const el=alvo.querySelector('[data-c="'+c+'"]'); if(el){ el.value=v; el.dispatchEvent(new Event('input',{bubbles:true})); } };
+  set('pauta','Retomada da reunião de '+dataBr(r.data)+': '+(p.pauta||'')+(p.encaminhamento?' (encaminhado: '+p.encaminhamento+')':''));
+  set('responsavel',p.responsavel||''); set('prazo','');
+  alvo.scrollIntoView({behavior:'smooth',block:'center'}); toast('Pauta incluída na ata de hoje. Registre o andamento no encaminhamento.','ok');
 }
 function marcarEtapas(){
   const F=FORMS[S.edit.tipo]; if(!F.etapas) return;
