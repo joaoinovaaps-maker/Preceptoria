@@ -1015,6 +1015,7 @@ async function call(acao, dados, silencioso){
     else if(m.indexOf('SESSAO_OUTRO')>-1){ sairLocal(); setTimeout(()=>abrirModal('<h2>Sessão encerrada</h2><p>Seu login foi usado para entrar em <b>outro aparelho ou navegador</b>. Por segurança, só é permitido um acesso por vez, e esta sessão foi encerrada.</p><p class="sm mut">Se não foi você, entre novamente e troque sua senha no menu do seu perfil.</p><div class="m-acoes"><button class="btn pri" onclick="fecharModal()">Entendi</button></div>'),150); }
     else if(m.indexOf('SESSAO')>-1){ sairLocal(); toast('Sessão encerrada. Entre novamente.'); }
     else if(m.indexOf('TROCAR_SENHA')>-1){ telaTrocaObrigatoria(); }
+    else if(/Ação inválida/i.test(m)) toast('O servidor da plataforma está desatualizado para esta função. Avise a supervisão: é preciso publicar a versão mais recente do Code.gs no Apps Script.','err');
     else if(!silencioso) toast(m,'err');
     throw e;
   } finally { busy(false); }
