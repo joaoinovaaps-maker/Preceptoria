@@ -1017,8 +1017,8 @@ function olhosSenha(raiz){
 }
 new MutationObserver(()=>olhosSenha()).observe(document.documentElement,{childList:true,subtree:true});
 document.addEventListener('DOMContentLoaded',()=>olhosSenha());
-/* ---------- Desconexão por inatividade (15 minutos) ---------- */
-const INATIVO_MS=15*60*1000, AVISO_MS=14*60*1000;
+/* ---------- Desconexão por inatividade (1 hora) ---------- */
+const INATIVO_MS=60*60*1000, AVISO_MS=59*60*1000;
 let ULT_ATIV=Date.now(), AVISO_ON=false;
 function marcarAtividade(){ if(AVISO_ON) return; ULT_ATIV=Date.now(); }
 ['mousemove','mousedown','keydown','scroll','touchstart','wheel','input'].forEach(ev=>window.addEventListener(ev, marcarAtividade, {passive:true, capture:true}));
@@ -1027,7 +1027,7 @@ function desconectarInativo(){
   if(!S.token && !document.getElementById('lgU')) return;
   const t=S.token; if(t) rodar('sair',t).catch(()=>{});
   sairLocal();
-  setTimeout(()=>abrirModal('<h2>Sessão encerrada por inatividade</h2><p>Você ficou 15 minutos sem usar a plataforma e foi desconectado(a) por segurança. Entre novamente para continuar.</p><p class="sm mut">Dica: use “Salvar progresso” ou “Salvar rascunho” com frequência para não perder o que está escrevendo.</p><div class="m-acoes"><button class="btn pri" onclick="fecharModal()">Entendi</button></div>'),150);
+  setTimeout(()=>abrirModal('<h2>Sessão encerrada por inatividade</h2><p>Você ficou 1 hora sem usar a plataforma e foi desconectado(a) por segurança. Entre novamente para continuar.</p><p class="sm mut">Dica: use “Salvar progresso” ou “Salvar rascunho” com frequência para não perder o que está escrevendo.</p><div class="m-acoes"><button class="btn pri" onclick="fecharModal()">Entendi</button></div>'),150);
 }
 function verificarInatividade(){
   if(!S.token) return;
@@ -1091,7 +1091,7 @@ function telaLogin(){
    '<p class="mut sm">'+esc(S.programa)+' · Fiocruz / SEMS Dourados-MS</p>'+
    '<div class="fld"><label class="lbl" for="lgU">Usuário</label><input type="text" id="lgU" autocomplete="username" autocapitalize="none"></div>'+
    '<div class="fld"><label class="lbl" for="lgS">Senha</label><input type="password" id="lgS" autocomplete="current-password"></div>'+
-   '<p class="mut sm" style="margin:2px 0 4px">🔒 Por segurança, a sessão é encerrada após 15 minutos sem uso.</p>'+
+   '<p class="mut sm" style="margin:2px 0 4px">🔒 Por segurança, a sessão é encerrada após 1 hora sem uso.</p>'+
    '<div class="erro-m" id="lgE"></div>'+
    '<button type="button" class="btn pri" style="width:100%;margin-top:8px" id="lgB">Entrar</button>'+
    '<p class="mut sm" style="margin-top:14px">Esqueceu a senha? Solicite a redefinição à supervisão de preceptoria.</p><p class="sm" style="margin-top:6px"><a href="#" onclick="telaMeta4Publica();return false">Registrar atividade ou reunião da Meta 4 sem login →</a></p></div></div>';
