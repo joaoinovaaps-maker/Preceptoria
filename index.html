@@ -681,7 +681,7 @@ const FORMS = {
   ]},
 
   ATA: { participantes:true, campos: [
-    {id:'tipo_reuniao', label:'Tipo de reunião', tipo:'chips', opcoes:['Reunião de preceptores','Reunião de equipe'], padrao:'Reunião de preceptores', obrig:true},
+    {id:'tipo_reuniao', label:'Tipo de reunião', tipo:'chips', opcoes:['Reunião de preceptores','Reunião de equipe'], padrao:'Reunião de preceptores', opcoesPorPerfil:{residente:['Reunião de equipe']}, padraoPorPerfil:{residente:'Reunião de equipe'}, obrig:true},
     {id:'equipe', label:'Equipe', tipo:'select', opcoes:['ESF 59 – Ipê Rosa','ESF 60 – Ipê Amarelo','ESF 61 – Ipê Branco','eMulti','Todas as equipes da unidade'], mostrarSe:['tipo_reuniao','Reunião de equipe']},
     {id:'local', label:'Local', tipo:'text', ph:'Ex.: Sala de reuniões da UBS'},
     {id:'ausentes', label:'Ausentes', tipo:'multi', fonte:['preceptor','supervisor','admin','gestor','residente','colaborador'], excluirEu:true, agrupar:true},
@@ -746,7 +746,10 @@ const FORMS = {
     {id:'resumo', label:'Síntese da discussão', tipo:'textarea'},
     {id:'encaminhamentos', label:'Encaminhamentos', tipo:'textarea'},
     {tipo:'bloco', label:'Documentos e materiais'},
-    {id:'documentos', label:'Arquivos do encontro', tipo:'anexos', aceita:'image/*,application/pdf', max:10, ajuda:'PDF ou imagem, até 10 arquivos (PDF de até 10 MB). Ex.: apresentação ou artigo salvo em PDF, fotos do quadro, lista de presença. Arquivos do Word ou PowerPoint: salve como PDF antes de enviar.'}
+    {id:'ata_canal', label:'Ata do encontro', tipo:'anexos', aceita:'image/*,application/pdf', max:3, ajuda:'PDF ou foto da ata, até 3 arquivos.'},
+    {id:'artigo', label:'Artigo científico discutido', tipo:'anexos', aceita:'application/pdf,image/*', max:5, ajuda:'PDF do artigo (até 10 MB), até 5 arquivos.'},
+    {id:'artigo_ref', label:'Referência do artigo', tipo:'textarea', linhas:2, ph:'Autores. Título. Revista, ano. DOI ou link.', ajuda:'Opcional. Útil quando o PDF não pode ser anexado.'},
+    {id:'documentos', label:'Outros materiais', tipo:'anexos', aceita:'image/*,application/pdf', max:10, ajuda:'PDF ou imagem, até 10 arquivos (PDF de até 10 MB). Ex.: apresentação, fotos do quadro, lista de presença. Arquivos do Word ou PowerPoint: salve como PDF antes de enviar.'}
   ]},
 
   PI: { pdfAbnt:true, guiaLayout:true, etapas: [
@@ -826,12 +829,12 @@ const GESTAO = ['supervisor','gestor','admin'];
 const LEITORES = AUTORES.concat(['gestor']);
 const MENU = [
   {id:'inicio', nome:'Início', perfis:null, g:'Principal', c:'#0b7a5a', c2:'#e3f4ec', d:'Pendências e atalhos'},
-  {id:'FEEDBACK', nome:'Feedback semanal', perfis:['preceptor','supervisor','admin','residente','gestor'], g:'Principal', c:'#2563eb', c2:'#e6eefd', d:'Encontro semanal preceptor–residente'},
-  {id:'PDI', nome:'PDI', perfis:['preceptor','supervisor','admin','residente','gestor'], g:'Principal', c:'#7c3aed', c2:'#efe8fd', d:'Plano de Desenvolvimento Individual'},
-  {id:'PRONTUARIO', nome:'Avaliação de prontuário', perfis:['preceptor','supervisor','admin','residente','gestor'], g:'Principal', c:'#0891b2', c2:'#e0f4f8', d:'Qualidade do registro SOAP'},
-  {id:'PI', nome:'Projeto de intervenção', perfis:LEITORES, g:'Principal', c:'#d97706', c2:'#fdf1df', d:'Guia LAB InovaAPS e PDF ABNT'},
+  {id:'FEEDBACK', nome:'Feedback semanal', perfis:['preceptor','supervisor','admin','gestor'], g:'Principal', c:'#2563eb', c2:'#e6eefd', d:'Encontro semanal preceptor–residente'},
+  {id:'PDI', nome:'PDI', perfis:['preceptor','supervisor','admin','gestor'], g:'Principal', c:'#7c3aed', c2:'#efe8fd', d:'Plano de Desenvolvimento Individual'},
+  {id:'PRONTUARIO', nome:'Avaliação de prontuário', perfis:['preceptor','supervisor','admin','gestor'], g:'Principal', c:'#0891b2', c2:'#e0f4f8', d:'Qualidade do registro SOAP'},
+  {id:'PI', nome:'Projeto de intervenção', perfis:LEITORES.concat(['residente']), g:'Principal', c:'#d97706', c2:'#fdf1df', d:'Guia LAB InovaAPS e PDF ABNT'},
   {id:'ATA', nome:'Atas de reunião', perfis:LEITORES.concat(['residente','colaborador']), g:'Reuniões e registros', c:'#db2777', c2:'#fce7f1', d:'Reuniões de preceptores e de equipe'},
-  {id:'CANAL', nome:'Canal de núcleo', perfis:LEITORES, g:'Reuniões e registros', c:'#16a34a', c2:'#e3f6e9', d:'Encontros e materiais por núcleo'},
+  {id:'CANAL', nome:'Canal de núcleo', perfis:LEITORES.concat(['residente']), g:'Reuniões e registros', c:'#16a34a', c2:'#e3f6e9', d:'Encontros e materiais por núcleo'},
   {id:'SUPERVISAO', nome:'Feedback da supervisão', perfis:LEITORES, g:'Reuniões e registros', c:'#ea580c', c2:'#fdeadd', d:'Supervisor técnico com preceptor'},
   {id:'META4', nome:'Meta 4', perfis:null, g:'Reuniões e registros', c:'#e11d48', c2:'#fde4e9', d:'Atividades em grupo e reuniões'},
   {id:'frequencia', nome:'Frequência', perfis:null, g:'Rotina', c:'#0d9488', c2:'#dff5f2', d:'Registro de entrada e saída'},
@@ -1226,6 +1229,7 @@ function marcarGrupo(bt){ const cx=Array.from(bt.closest('.mg').querySelectorAll
 function campoHTML(c, v){
   if(c.tipo==='bloco'){ if(c.mostrarSe){ c.id=c.id||('blk_'+Math.random().toString(36).slice(2,8)); DEF[c.id]=c; } return '<div class="bloco"'+(c.mostrarSe?' id="w_'+c.id+'"':'')+'><h3 class="blk-t">'+(c.num?'<span class="n">'+esc(c.num)+'</span>':'')+esc(c.label)+'</h3>'+(c.orient?'<div class="orient">'+c.orient+'</div>':'')+'</div>'; }
   DEF[c.id]=c;
+  if(v===undefined && c.padraoPorPerfil && S.eu && c.padraoPorPerfil[S.eu.perfil]!==undefined) v=c.padraoPorPerfil[S.eu.perfil];
   if(v===undefined && c.padrao!==undefined) v=c.padrao;
   if(v===undefined && c.padraoEu && S.eu) v=S.eu.nome;
   const id='f_'+c.id, ph=c.ph?' placeholder="'+esc(c.ph)+'"':'';
@@ -1242,7 +1246,8 @@ function campoHTML(c, v){
       opcoesUsuarios(c.fonte).map(u=>'<option value="'+u.id+'"'+(u.id===v?' selected':'')+'>'+esc(u.nome)+'</option>').join('')+'</select>'+ajuda+'</div>';
   if(c.tipo==='chips' || c.tipo==='chipsm'){
     const m=c.tipo==='chipsm', sel=m?(v||[]):(v||'');
-    return abre+rotulo(c)+'<div class="chips'+(c.coluna?' col':'')+'" id="'+id+'">'+c.opcoes.map(o=>
+    const opc=(c.opcoesPorPerfil && S.eu && c.opcoesPorPerfil[S.eu.perfil]) || c.opcoes;
+    return abre+rotulo(c)+'<div class="chips'+(c.coluna?' col':'')+'" id="'+id+'">'+opc.map(o=>
       '<label class="chip"><input type="'+(m?'checkbox':'radio')+'" name="'+id+'" value="'+esc(o)+'"'+((m?sel.indexOf(o)>-1:sel===o)?' checked':'')+'><span>'+esc(o)+'</span></label>').join('')+'</div>'+ajuda+'</div>';
   }
   if(c.tipo==='multi' && c.agrupar){
