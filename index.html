@@ -1160,7 +1160,7 @@ async function vInicio(){
         kpiMeta('Revisões de prontuário', l.prontuario, p.metas.PRONTUARIO)+
         kpiMeta('Canais de núcleo', l.canal, p.metas.CANAL)+
         kpiMeta('Atas de reunião', l.ata, p.metas.ATA)+
-        '<div class="kpi"><span>Projeto de intervenção</span><b>'+l.pi+'%</b>'+barra(l.pi)+'<small>'+(l.piConcluido?'Concluído':'preenchido')+'</small></div>'+
+        '<div class="kpi"><span>Projeto de intervenção</span><b>'+l.pi+'%</b>'+barra(l.pi)+'<small>'+(l.piConcluido?'Concluído':'preenchido')+(l.piCom?' · '+(l.piCoautoria?'coautoria com ':'compartilhado com ')+esc(l.piCom):'')+'</small></div>'+
         '<div class="kpi"><span>Feedback da supervisão</span><b>'+l.supervisao+'</b><small> recebido(s) no mês</small></div>'+
       '</div>';
     }
@@ -1983,7 +1983,7 @@ async function carregarPainel(){
     metLinha('Feedback semanal', l.feedback, p.metas.FEEDBACK, l.pctFeedback, l.feedbackAssinados+' assinado(s) pelo residente')+
     metLinha('Revisão de prontuário', l.prontuario, p.metas.PRONTUARIO, l.pctProntuario)+
     metLinha('Canal de núcleo', l.canal, p.metas.CANAL, l.pctCanal)+
-    '<div class="met"><div class="lin"><span>Projeto de intervenção</span><b>'+l.pi+'%'+(l.piConcluido?' · concluído':'')+'</b></div>'+barra(l.pi)+'</div>'+
+    '<div class="met"><div class="lin"><span>Projeto de intervenção'+(l.piCom?' <small class="mut">('+(l.piCoautoria?'coautoria com ':'com ')+esc(l.piCom)+')</small>':'')+'</span><b>'+l.pi+'%'+(l.piConcluido?' · concluído':'')+'</b></div>'+barra(l.pi)+'</div>'+
     '<div class="reg-meta">Atas de reunião: <b>'+l.ata+'</b> · Pendências de assinatura: <b>'+l.pendentes+'</b> · Feedback da supervisão no mês: <b>'+l.supervisao+'</b>'+(l.supervisao?'':' <span class="chip st-aguardando">não realizado</span>')+'</div></div>').join('')+'</div>';
   box.innerHTML=h;
 }
