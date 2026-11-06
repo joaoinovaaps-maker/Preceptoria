@@ -7,7 +7,7 @@ var EXEC_URL = 'https://script.google.com/macros/s/AKfycbzqrFZy258FKBFWF3wFcHomT
 var PAGINA_EXTERNA = true;
 var URL_PARAMS = (function(){ var o={}; new URLSearchParams(location.search).forEach(function(v,k){ o[k]=v; }); return o; })();</script>
 <meta charset="utf-8">
-<title>Plataforma da Preceptoria</title>
+<title>Elo APS · Ensino e serviço na Atenção Primária</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
 <style>
@@ -1152,7 +1152,7 @@ function inicioNormal(){
 function telaLogin(){
   $('#app').innerHTML =
    '<div class="login"><div class="card" id="fLogin">'+
-   (faixaLogos()||marca())+'<h1>Plataforma da Preceptoria</h1>'+
+   (faixaLogos()||marca())+'<h1>Elo APS</h1><p class="sm" style="margin:-4px 0 6px;color:var(--pri);font-weight:600">Ensino e serviço na Atenção Primária · Dourados-MS</p>'+
    '<p class="mut sm">'+esc(S.programa)+' · Fiocruz / SEMS Dourados-MS</p>'+
    '<div class="fld"><label class="lbl" for="lgU">Usuário</label><input type="text" id="lgU" autocomplete="username" autocapitalize="none"></div>'+
    '<div class="fld"><label class="lbl" for="lgS">Senha</label><input type="password" id="lgS" autocomplete="current-password"></div>'+
@@ -1193,7 +1193,7 @@ function sairLocal(){ clearInterval(S.poll); fecharAvisoInativo(); store('tk',nu
 function sair(){ const t=S.token; rodar('sair',t).catch(()=>{}); sairLocal(); }
 
 /* ---------- Termo de uso e privacidade ---------- */
-const TERMO_HTML='<h3>1. Finalidade</h3><p>A Plataforma da Preceptoria apoia a gestão pedagógica do '+PROGRAMA_TXT+' (Fiocruz/SEMS Dourados-MS): registros de feedback, PDI, avaliação de prontuário, atas, canais, projetos de intervenção, escalas, frequência e relatórios. Os dados são usados apenas para essas finalidades.</p>'+
+const TERMO_HTML='<h3>1. Finalidade</h3><p>A plataforma Elo APS apoia a gestão pedagógica do '+PROGRAMA_TXT+' (Fiocruz/SEMS Dourados-MS): registros de feedback, PDI, avaliação de prontuário, atas, canais, projetos de intervenção, escalas, frequência e relatórios. Os dados são usados apenas para essas finalidades.</p>'+
  '<h3>2. Dados tratados</h3><p>Nome, usuário, e-mail (opcional), perfil, categoria profissional, unidade, equipe, registros pedagógicos, assinaturas eletrônicas, escalas, férias e estágios e, na frequência eletrônica, data, hora e localização <b>apenas no momento do registro</b>. Também são registrados acessos e ações (trilha de auditoria) para segurança.</p>'+
  '<h3>3. Base legal</h3><p>Execução de políticas públicas e atribuições legais da administração pública e da instituição formadora, conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, arts. 7º, III, e 23).</p>'+
  '<h3>4. Quem tem acesso</h3><p>Cada perfil vê apenas o necessário. O conteúdo do feedback semanal e do feedback da supervisão é restrito às duas pessoas envolvidas. Supervisão e gestão acessam os indicadores e relatórios da unidade. Os dados não são vendidos nem compartilhados com terceiros fora do programa.</p>'+
@@ -1280,7 +1280,7 @@ function montarShell(){
   const ini=(S.eu.nome||'?').split(' ').filter(Boolean), sigla=(ini[0]||'?')[0]+((ini.length>1?ini[ini.length-1][0]:'')||'');
   $('#app').innerHTML =
    '<div class="shell" id="shell">'+
-   '<aside class="side no-print" id="side"><div class="side-brand">'+marca()+'<div><b>Plataforma da Preceptoria</b><small>'+esc(S.eu.unidade)+'</small></div></div>'+
+   '<aside class="side no-print" id="side"><div class="side-brand">'+marca()+'<div><b>Elo APS</b><small>'+esc(S.eu.unidade)+' · ensino e serviço na APS</small></div></div>'+
    '<nav class="side-nav" id="tabs">'+grupos.map(g=>'<div class="nv-grp">'+esc(g.n)+'</div>'+g.l.map(m=>
       '<button class="nv" data-r="'+m.id+'" style="'+estiloCor(m.id)+'" onclick="ir(\''+m.id+'\')"><span class="ic">'+svg(m.id)+'</span><span>'+esc(m.nome)+'</span></button>').join('')).join('')+
    '<div class="nv-grp">Outras ferramentas</div>'+LINKS_EXTERNOS.map(l=>
@@ -1306,7 +1306,7 @@ function ir(rota, params){
   S.rota=rota; S.params=params||{};
   const ativo = rota==='meta4rel' ? 'META4' : rota==='vigipainel' ? 'VIGI' : FORMS[rota] || ['inicio','painel','usuarios','frequencia','escalas','documentos','auditoria'].indexOf(rota)>-1 ? rota : (S.params.tipo || S.ultimaLista);
   $$('#tabs .nv[data-r]').forEach(b=>b.classList.toggle('on', b.dataset.r===ativo));
-  const mAt=MENU.find(m=>m.id===ativo); const tt=$('#topTit'); if(tt) tt.textContent=mAt?mAt.nome:'Plataforma da Preceptoria';
+  const mAt=MENU.find(m=>m.id===ativo); const tt=$('#topTit'); if(tt) tt.textContent=mAt?mAt.nome:'Elo APS';
   menuLateral(false);
   if(rota==='inicio') return vInicio();
   if(rota==='painel') return vPainel();
@@ -2341,7 +2341,7 @@ async function gerarRelMeta4(){
      return '<div class="rel-it"><div class="rel-h"><b>'+x[0]+' · '+esc(x[2])+'</b><span>'+dataBr(i.data)+'</span></div>'+
       ((i.fotos||[]).length?'<div class="lbl">Fotos</div><div class="rel-img">'+imgs(i.fotos)+'</div>':'')+
       '<div class="lbl">Lista de presença / ata</div><div class="rel-img">'+imgs(i.presenca)+'</div></div>'; }).join('')+
-   '<p class="mut sm" style="margin-top:14px">Registros enviados pelos responsáveis pela Plataforma da Preceptoria, com confirmação de autorização de uso de imagem pelos participantes.</p></div>';
+   '<p class="mut sm" style="margin-top:14px">Registros enviados pelos responsáveis pela plataforma Elo APS, com confirmação de autorização de uso de imagem pelos participantes.</p></div>';
   box.innerHTML=h;
 }
 
@@ -2544,7 +2544,7 @@ function formUsuario(id){
 }
 async function recarregarUsuarios(){ try{ const r=await call('init',{},true); S.usuarios=r.usuarios; }catch(e){} }
 function mostrarSenha(nome, login, senha){
-  const msg='Olá, '+nome.split(' ')[0]+'! Seu acesso à Plataforma da Preceptoria foi criado.\nEndereço: '+S.url+'\nUsuário: '+login+'\nSenha provisória: '+senha+'\nNo primeiro acesso, você definirá uma nova senha.';
+  const msg='Olá, '+nome.split(' ')[0]+'! Seu acesso ao Elo APS foi criado.\nEndereço: '+S.url+'\nUsuário: '+login+'\nSenha provisória: '+senha+'\nNo primeiro acesso, você definirá uma nova senha.';
   abrirModal('<h2>Acesso gerado</h2><p class="sm">Envie a mensagem abaixo ao usuário (por exemplo, pelo WhatsApp). A senha provisória não será exibida novamente.</p>'+
     '<textarea id="mMsg" style="min-height:150px" readonly>'+esc(msg)+'</textarea><div class="m-acoes"><button class="btn" id="mCp">Copiar mensagem</button><button class="btn pri" onclick="fecharModal()">Concluir</button></div>');
   $('#mCp').onclick=()=>{ const t=$('#mMsg'); t.select(); let ok=false; try{ ok=document.execCommand('copy'); }catch(e){} toast(ok?'Mensagem copiada.':'Selecione o texto e copie manualmente.', ok?'ok':''); };
