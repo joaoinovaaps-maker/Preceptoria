@@ -460,6 +460,26 @@ input:focus,select:focus,textarea:focus{outline-color:#e7c3ae!important;border-c
 .btn.pri{background:var(--grad);color:#fff}
 .chip:has(input:checked){border-color:var(--pri);background:var(--pri2)}
 a{color:var(--pri)}
+/* Busca, auditoria, vigilância, lembretes */
+.busca-top{flex:1;max-width:460px;margin:0 12px;position:relative;display:flex;align-items:center}
+.busca-top input{width:100%;border:1px solid var(--bd);background:#f6f0e8;border-radius:12px;padding:9px 12px 9px 36px;font:inherit;font-size:.9rem}
+.busca-top input:focus{background:#fff;outline:3px solid #ecd3c4;border-color:var(--pri)}
+.busca-top .ic-b{position:absolute;left:10px;color:var(--mut);display:grid}.busca-top .ic-b svg{width:18px;height:18px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+@media (max-width:700px){.busca-top{margin:0 6px}.busca-top input{padding-left:32px;font-size:.85rem}}
+table.tab-aud,table.tab-vigi{width:100%;border-collapse:collapse;font-size:.86rem}
+.tab-aud th,.tab-aud td,.tab-vigi th,.tab-vigi td{padding:8px 10px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+.tab-aud th,.tab-vigi th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+.tab-aud tr.ac-excluir td:nth-child(3),.tab-aud tr.ac-mesclar td:nth-child(3){color:var(--err);font-weight:700}
+.tab-vigi td.vg{text-align:center;font-weight:700}.tab-vigi .Ótimo{background:#e3ecd2}.tab-vigi .Bom{background:#eef2df}.tab-vigi .Suficiente{background:#f8ecd2}.tab-vigi .Regular{background:#f6e0db}
+.tab-vigi .up{color:#5d7a2e}.tab-vigi .down{color:#a33b2b}
+.notif.lemb{border-left:4px solid #c9932f;background:#fbf4e6}
+.oc{display:inline-block;border-radius:999px;padding:1px 8px;font-size:.72rem;font-weight:700;background:#f6e0db;color:#a33b2b}.oc-atraso,.oc-saida_antecipada{background:#f8ecd2;color:#9a6a12}
+/* Termo e guia */
+.termo{max-height:46vh;overflow:auto;border:1px solid var(--bd);border-radius:12px;padding:6px 14px;background:#fbf8f4;font-size:.9rem;line-height:1.5}
+.termo h3{font-size:.95rem;margin:12px 0 4px}.termo ul{padding-left:18px;margin:4px 0}
+.guia-sl{text-align:center;padding:6px 4px 0}.guia-ic{font-size:2.6rem;line-height:1;margin-bottom:6px}.guia-sl p{color:var(--mut);line-height:1.55}
+.guia-dots{display:flex;gap:6px;justify-content:center;margin:12px 0 4px}.guia-dots i{width:8px;height:8px;border-radius:50%;background:var(--bd)}.guia-dots i.on{background:var(--pri);width:20px;border-radius:6px}
 /* Aviso de inatividade */
 #avisoInativo{position:fixed;inset:0;z-index:90;background:rgba(15,23,42,.5);display:grid;place-items:center;padding:16px}
 #avisoInativo .ai-box{background:#fff;border-radius:18px;padding:22px;max-width:380px;width:100%;box-shadow:0 24px 60px rgba(15,23,42,.3);text-align:center}
@@ -906,6 +926,7 @@ const MENU = [
   {id:'frequencia', nome:'Frequência', perfis:null, g:'Rotina', c:'#6d5a4f', c2:'#ece6e1', d:'Registro de entrada e saída'},
   {id:'escalas', nome:'Escalas', perfis:['residente','preceptor','supervisor','gestor','admin'], g:'Rotina', c:'#8c6d46', c2:'#f0e6d6', d:'Agenda semanal e calendário'},
   {id:'painel', nome:'Painel mensal', perfis:GESTAO, g:'Gestão', c:'#7d4b5c', c2:'#f0e3e7', d:'Metas pedagógicas da preceptoria'},
+  {id:'auditoria', nome:'Auditoria', perfis:['supervisor','admin'], g:'Gestão', c:'#6d5a4f', c2:'#ece6e1', d:'Quem acessou e o que foi alterado'},
   {id:'usuarios', nome:'Usuários', perfis:['supervisor','admin'], g:'Gestão', c:'#5c544e', c2:'#ebe8e5', d:'Cadastro e senhas'}
 ];
 /* Outras ferramentas (abrem em nova aba) */
@@ -930,6 +951,8 @@ const ICONES = {
   escalas:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h2M14 14h2M8 18h2"/>',
   painel:'<path d="M3 3v18h18"/><path d="M7 16v-5M12 16V8M17 16v-9"/>',
   usuarios:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/>',
+  auditoria:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  busca:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   vigilancia:'<path d="M3 3v18h18"/><path d="M7 16v-5M12 16V8M17 16v-9"/>',
   notifica:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
   opm:'<circle cx="15" cy="4" r="2"/><path d="M14 8l-1 5h5l2 6"/><path d="M10 9.5A6 6 0 1 0 16.5 17"/>',
@@ -1015,6 +1038,7 @@ async function call(acao, dados, silencioso){
     else if(m.indexOf('SESSAO_OUTRO')>-1){ sairLocal(); setTimeout(()=>abrirModal('<h2>Sessão encerrada</h2><p>Seu login foi usado para entrar em <b>outro aparelho ou navegador</b>. Por segurança, só é permitido um acesso por vez, e esta sessão foi encerrada.</p><p class="sm mut">Se não foi você, entre novamente e troque sua senha no menu do seu perfil.</p><div class="m-acoes"><button class="btn pri" onclick="fecharModal()">Entendi</button></div>'),150); }
     else if(m.indexOf('SESSAO')>-1){ sairLocal(); toast('Sessão encerrada. Entre novamente.'); }
     else if(m.indexOf('TROCAR_SENHA')>-1){ telaTrocaObrigatoria(); }
+    else if(m.indexOf('TERMO_PENDENTE')>-1){ telaTermo(); }
     else if(/Ação inválida/i.test(m)) toast('O servidor da plataforma está desatualizado para esta função. Avise a supervisão: é preciso publicar a versão mais recente do Code.gs no Apps Script.','err');
     else if(!silencioso) toast(m,'err');
     throw e;
@@ -1113,7 +1137,7 @@ function telaLogin(){
    '<p class="mut sm" style="margin:2px 0 4px">🔒 Por segurança, a sessão é encerrada após 1 hora sem uso.</p>'+
    '<div class="erro-m" id="lgE"></div>'+
    '<button type="button" class="btn pri" style="width:100%;margin-top:8px" id="lgB">Entrar</button>'+
-   '<p class="mut sm" style="margin-top:14px">Esqueceu a senha? Solicite a redefinição à supervisão de preceptoria.</p><p class="sm" style="margin-top:6px"><a href="#" onclick="telaMeta4Publica();return false">Registrar atividade ou reunião da Meta 4 sem login →</a></p></div></div>';
+   '<p class="sm" style="margin-top:14px"><a href="#" onclick="recuperarSenhaUI();return false">Esqueci minha senha</a> <span class="mut">· enviaremos um código para o e-mail cadastrado. Sem e-mail cadastrado, peça a redefinição à supervisão.</span></p><p class="sm" style="margin-top:6px"><a href="#" onclick="telaMeta4Publica();return false">Registrar atividade ou reunião da Meta 4 sem login →</a></p></div></div>';
   $('#lgB').onclick=fazerLogin;
   ['lgU','lgS'].forEach(i=>{ $('#'+i).onkeydown=e=>{ if(e.key==='Enter') fazerLogin(); }; });
   $('#lgU').focus();
@@ -1135,13 +1159,78 @@ async function iniciar(){
   try{ r=await call('init',{},true); }catch(e){ if(!S.token) return; sairLocal(); return; }
   r.url = window.PAGINA_EXTERNA ? location.origin+location.pathname : r.url;
   S.eu=r.eu; S.programa=r.programa||PROGRAMA_PADRAO; S.logos=logosInova(r.logos); S.logosCfg=r.logosCfg||[]; S.usuarios=r.usuarios; S.config=r.config; S.tipos=r.tipos; S.url=r.url; S.naoLidas=r.naoLidas;
+  S.prefs={email:r.email||'', emailResumo:!!r.emailResumo, guiaVisto:!!r.guiaVisto, termoAceito:r.termoAceito||'', termoVersao:r.termoVersao||''};
   if(r.trocarSenha) return telaTrocaObrigatoria();
+  if(!r.termoAceito) return telaTermo();
   montarShell(); ir('inicio');
+  if(!S.prefs.guiaVisto) setTimeout(()=>abrirGuia(true), 400);
   clearInterval(S.poll); S.poll=setInterval(atualizarSino, 120000);
 }
 
 function sairLocal(){ clearInterval(S.poll); fecharAvisoInativo(); store('tk',null); S.token=null; S.eu=null; fecharModal(); telaLogin(); }
 function sair(){ const t=S.token; rodar('sair',t).catch(()=>{}); sairLocal(); }
+
+/* ---------- Termo de uso e privacidade ---------- */
+const TERMO_HTML='<h3>1. Finalidade</h3><p>A Plataforma da Preceptoria apoia a gestão pedagógica do '+PROGRAMA_TXT+' (Fiocruz/SEMS Dourados-MS): registros de feedback, PDI, avaliação de prontuário, atas, canais, projetos de intervenção, escalas, frequência e relatórios. Os dados são usados apenas para essas finalidades.</p>'+
+ '<h3>2. Dados tratados</h3><p>Nome, usuário, e-mail (opcional), perfil, categoria profissional, unidade, equipe, registros pedagógicos, assinaturas eletrônicas, escalas, férias e estágios e, na frequência eletrônica, data, hora e localização <b>apenas no momento do registro</b>. Também são registrados acessos e ações (trilha de auditoria) para segurança.</p>'+
+ '<h3>3. Base legal</h3><p>Execução de políticas públicas e atribuições legais da administração pública e da instituição formadora, conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, arts. 7º, III, e 23).</p>'+
+ '<h3>4. Quem tem acesso</h3><p>Cada perfil vê apenas o necessário. O conteúdo do feedback semanal e do feedback da supervisão é restrito às duas pessoas envolvidas. Supervisão e gestão acessam os indicadores e relatórios da unidade. Os dados não são vendidos nem compartilhados com terceiros fora do programa.</p>'+
+ '<h3>5. Responsabilidades de quem usa</h3><ul><li>Manter a senha em sigilo e não compartilhar o acesso (só é permitido um acesso por vez).</li><li><b>Não registrar dados que identifiquem pacientes</b> (nome, CNS, CPF, endereço) nos textos e anexos.</li><li>Registrar informações verdadeiras; a assinatura eletrônica tem validade para fins internos do programa.</li></ul>'+
+ '<h3>6. Guarda e direitos</h3><p>Os registros são mantidos enquanto necessários ao programa e às prestações de contas. Você pode pedir acesso, correção ou informações sobre o uso dos seus dados à supervisão de preceptoria ou à coordenação do programa (art. 18 da LGPD).</p>';
+function telaTermo(){
+  $('#app').innerHTML='<div class="login"><div class="card" style="max-width:640px">'+marca()+'<h1>Termo de uso e privacidade</h1><p class="mut sm">Versão '+esc((S.prefs&&S.prefs.termoVersao)||'1.0')+'. Leia e aceite para continuar.</p>'+
+    '<div class="termo">'+TERMO_HTML+'</div>'+
+    '<label style="display:flex;gap:8px;align-items:flex-start;margin:12px 0"><input type="checkbox" id="tmC" style="margin-top:3px"> Li e aceito o termo de uso e privacidade da plataforma.</label>'+
+    '<button class="btn pri" style="width:100%" id="tmB">Aceitar e continuar</button><button class="btn" style="width:100%;margin-top:8px" onclick="sair()">Não aceito · sair</button></div></div>';
+  $('#tmB').onclick=async()=>{ if(!$('#tmC').checked) return toast('Marque a caixa de aceite para continuar.','err');
+    try{ const r=await call('aceitarTermo',{}); S.prefs=S.prefs||{}; S.prefs.termoAceito=r.quando; toast('Termo aceito em '+dataHoraBr(r.quando)+'.','ok'); await iniciar(); }catch(e){} };
+}
+function verTermo(){ abrirModal('<h2>Termo de uso e privacidade</h2>'+(S.prefs&&S.prefs.termoAceito?'<p class="mut sm">Aceito em '+esc(dataHoraBr(S.prefs.termoAceito))+'.</p>':'')+'<div class="termo">'+TERMO_HTML+'</div><div class="m-acoes"><button class="btn pri" onclick="fecharModal()">Fechar</button></div>'); }
+
+/* ---------- Guia rápido por perfil ---------- */
+const GUIAS={
+  residente:[['👋','Bem-vindo(a) à plataforma','Aqui ficam os seus documentos da residência. Use o menu à esquerda (no celular, o botão ☰) e o sino no topo para ver avisos e lembretes.'],
+    ['✍️','Seus documentos','Feedback semanal, PDI e avaliação de prontuário chegam para você assinar. Em <b>Meus documentos</b> você assina e consulta o histórico do que já foi assinado.'],
+    ['🗓️','Escalas e frequência','Em <b>Escalas</b> você vê a sua agenda e registra estágio obrigatório, optativo e férias. Em <b>Frequência</b> registra entrada e saída; a plataforma compara com a sua agenda.'],
+    ['💡','Projetos e encontros','No <b>Projeto de intervenção</b> você escreve por etapas, pode compartilhar com colegas e gera o PDF em ABNT. Nos <b>canais</b> ficam atas e artigos discutidos.']],
+  preceptor:[['👋','Bem-vindo(a), preceptor(a)','No <b>Início</b> aparecem as suas metas pedagógicas do mês e as pendências. O sino avisa assinaturas e lembretes, como feedback da semana ainda não registrado.'],
+    ['📝','Registros com o residente','Registre feedback semanal, PDI e avaliação de prontuário e envie para assinatura. Assinaturas paradas há mais de 3 dias viram lembrete automático.'],
+    ['🗓️','Escalas','Monte o mês padrão por semanas, replique uma semana para as seguintes e <b>vincule seus residentes</b>: a plataforma aponta divergências de feedback e sombra.'],
+    ['💡','Projeto e canais','Compartilhe o projeto de intervenção com colegas para escrever junto. Encontros do canal teórico ou de núcleo viram registro da <b>Meta 4</b> com um clique.']],
+  gestao:[['👋','Bem-vindo(a) à gestão','O <b>Painel mensal</b> mostra as metas pedagógicas de cada preceptor e, mais abaixo, a evolução dos indicadores da Vigilância da APS por equipe.'],
+    ['👥','Usuários e auditoria','Em <b>Usuários</b> você cadastra, redefine senhas e exclui duplicados (o histórico é transferido). Em <b>Auditoria</b> vê quem acessou e o que foi alterado.'],
+    ['🗓️','Escalas e frequência','Acompanhe a visão geral, quem está onde, férias e estágios. Em Frequência, a <b>conferência com a escala</b> aponta faltas, atrasos e saídas antecipadas sem justificativa.'],
+    ['📄','Relatórios','Gere o relatório da Meta 4 e exporte o painel para o Google Planilhas. Lembretes e o resumo semanal por e-mail ajudam a equipe a manter as assinaturas em dia.']]
+};
+function abrirGuia(primeiraVez){
+  const P=S.eu.perfil, L=GUIAS[P==='residente'||P==='colaborador'?'residente':P==='preceptor'?'preceptor':'gestao']; let i=0;
+  const pinta=()=>{ const x=L[i];
+    $('#modal-box').innerHTML='<div class="guia-sl"><div class="guia-ic">'+x[0]+'</div><h2>'+x[1]+'</h2><p>'+x[2]+'</p><div class="guia-dots">'+L.map((_,k)=>'<i class="'+(k===i?'on':'')+'"></i>').join('')+'</div></div>'+
+      '<div class="m-acoes"><button class="btn" id="gPular">'+(i===L.length-1?'Fechar':'Pular')+'</button>'+(i>0?'<button class="btn" id="gVolta">Voltar</button>':'')+'<button class="btn pri" id="gProx">'+(i===L.length-1?'Começar':'Próximo')+'</button></div>';
+    $('#gPular').onclick=fim; if($('#gVolta')) $('#gVolta').onclick=()=>{ i--; pinta(); };
+    $('#gProx').onclick=()=>{ if(i===L.length-1) return fim(); i++; pinta(); }; };
+  const fim=()=>{ fecharModal(); if(primeiraVez || !S.prefs.guiaVisto){ S.prefs.guiaVisto=true; call('guiaVisto',{},true).catch(()=>{}); } };
+  abrirModal(''); pinta();
+}
+
+/* ---------- Recuperação de senha pelo e-mail ---------- */
+function recuperarSenhaUI(){
+  abrirModal('<h2>Recuperar a senha</h2><p class="sm">Informe o seu usuário ou o e-mail cadastrado. Enviaremos um código de 6 dígitos, válido por 15 minutos.</p>'+
+    '<div class="fld"><label class="lbl" for="rcU">Usuário ou e-mail</label><input type="text" id="rcU" autocapitalize="none" value="'+esc(val('lgU')||'')+'"></div>'+
+    '<div id="rcP2" class="hidden"><div class="fld"><label class="lbl" for="rcC">Código recebido</label><input type="text" id="rcC" inputmode="numeric" maxlength="6"></div>'+
+    '<div class="fld"><label class="lbl" for="rcN">Nova senha (mínimo de 8 caracteres)</label><input type="password" id="rcN" autocomplete="new-password"></div>'+
+    '<div class="fld"><label class="lbl" for="rcN2">Confirme a nova senha</label><input type="password" id="rcN2" autocomplete="new-password"></div></div>'+
+    '<div class="erro-m" id="rcE"></div><p class="mut sm" id="rcM"></p>'+
+    '<div class="m-acoes"><button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn" id="rcEnv">Enviar código</button><button class="btn pri hidden" id="rcOk">Redefinir senha</button></div>');
+  $('#rcEnv').onclick=async()=>{ const u=val('rcU'); if(!u) return $('#rcE').textContent='Informe o usuário ou o e-mail.';
+    $('#rcE').textContent=''; busy(true);
+    try{ const r=await rodar('recuperarSenha',u); $('#rcM').textContent=r.msg; $('#rcP2').classList.remove('hidden'); $('#rcOk').classList.remove('hidden'); $('#rcEnv').textContent='Reenviar código'; }
+    catch(e){ $('#rcE').textContent=msgErro(e); } finally{ busy(false); } };
+  $('#rcOk').onclick=async()=>{ const u=val('rcU'), c=val('rcC'), n=$('#rcN').value;
+    if(n!==$('#rcN2').value) return $('#rcE').textContent='As senhas não conferem.';
+    busy(true); try{ const r=await rodar('redefinirSenha',u,c,n); fecharModal(); toast('Senha redefinida. Entre com o usuário '+r.login+' e a nova senha.','ok'); const l=$('#lgU'); if(l) l.value=r.login; }
+    catch(e){ $('#rcE').textContent=msgErro(e); } finally{ busy(false); } };
+}
 
 function telaTrocaObrigatoria(){
   $('#app').innerHTML='<div class="login"><div class="card">'+marca()+'<h1>Defina sua senha</h1>'+
@@ -1179,6 +1268,7 @@ function montarShell(){
    '<button class="icon" title="Sair" onclick="sair()">'+svg('sair')+'</button></div></aside>'+
    '<div class="side-bg" onclick="menuLateral(false)"></div>'+
    '<div class="conteudo"><header class="top no-print"><div class="top-tit"><button class="icon hamb" title="Menu" onclick="menuLateral(true)">'+svg('menu')+'</button><span id="topTit">Início</span></div>'+
+   '<form class="busca-top" onsubmit="event.preventDefault();const q=this.q.value.trim(); if(q) ir(\'busca\',{q:q});"><span class="ic-b">'+svg('busca')+'</span><input name="q" type="search" placeholder="Buscar documento, residente ou projeto" autocomplete="off" aria-label="Buscar"></form>'+
    '<div class="acts"><button class="icon" title="Notificações" onclick="abrirNotif()">'+ICON_SINO+'<span id="badge" class="badge hidden"></span></button>'+
    '<button class="icon" title="Minha conta" onclick="menuConta()">'+ICON_USER+'</button></div></header>'+
    '<main id="view"></main></div></div>';
@@ -1190,9 +1280,9 @@ async function atualizarSino(){ try{ const l=await call('notificacoes',{},true);
 function view(html){ const v=$('#view'); v.oninput=null; v.onchange=null; v.innerHTML=html; window.scrollTo(0,0); }
 
 function ir(rota, params){
-  if(['inicio','painel','usuarios','frequencia','escalas','documentos'].indexOf(rota)>-1 || FORMS[rota]) S.ultimaLista=rota;
+  if(['inicio','painel','usuarios','frequencia','escalas','documentos','auditoria'].indexOf(rota)>-1 || FORMS[rota]) S.ultimaLista=rota;
   S.rota=rota; S.params=params||{};
-  const ativo = rota==='meta4rel' ? 'META4' : FORMS[rota] || ['inicio','painel','usuarios','frequencia','escalas','documentos'].indexOf(rota)>-1 ? rota : (S.params.tipo || S.ultimaLista);
+  const ativo = rota==='meta4rel' ? 'META4' : FORMS[rota] || ['inicio','painel','usuarios','frequencia','escalas','documentos','auditoria'].indexOf(rota)>-1 ? rota : (S.params.tipo || S.ultimaLista);
   $$('#tabs .nv[data-r]').forEach(b=>b.classList.toggle('on', b.dataset.r===ativo));
   const mAt=MENU.find(m=>m.id===ativo); const tt=$('#topTit'); if(tt) tt.textContent=mAt?mAt.nome:'Plataforma da Preceptoria';
   menuLateral(false);
@@ -1202,6 +1292,8 @@ function ir(rota, params){
   if(rota==='frequencia') return vFrequencia();
   if(rota==='escalas') return vEscalas();
   if(rota==='documentos') return vDocumentos();
+  if(rota==='auditoria') return vAuditoria();
+  if(rota==='busca') return vBusca(S.params);
   if(rota==='meta4rel') return vRelMeta4();
   if(rota==='editar') return vEditar(S.params);
   if(rota==='doc') return vDoc(S.params);
@@ -1211,17 +1303,24 @@ function voltar(){ ir(S.ultimaLista||'inicio'); }
 
 function menuConta(){
   abrirModal('<h2>'+esc(S.eu.nome)+'</h2><p class="mut sm">'+esc(PERFIL_NOME[S.eu.perfil])+(S.eu.categoria?' · '+esc(S.eu.categoria):'')+' · '+esc(S.eu.unidade)+'<br>Usuário: '+esc(S.eu.login)+'</p>'+
+   '<h3 class="sec">E-mail e avisos</h3>'+
+   '<div class="fld"><label class="lbl" for="cEm">E-mail (para recuperar a senha e receber o resumo)</label><input type="email" id="cEm" value="'+esc((S.prefs&&S.prefs.email)||'')+'" placeholder="nome@exemplo.com"></div>'+
+   '<label style="display:flex;gap:8px;align-items:flex-start;font-size:.9rem"><input type="checkbox" id="cRes"'+(S.prefs&&S.prefs.emailResumo?' checked':'')+' style="margin-top:3px"> Receber por e-mail, toda segunda-feira, o resumo das minhas pendências (assinaturas e lembretes)</label>'+
+   '<div class="m-acoes" style="margin-top:8px"><button class="btn" id="cPref">Salvar e-mail e avisos</button></div>'+
    '<h3 class="sec">Alterar senha</h3>'+formSenhaHTML()+
+   '<p class="sm" style="margin-top:10px"><a href="#" onclick="fecharModal();abrirGuia();return false">Ver o guia rápido</a> · <a href="#" onclick="fecharModal();verTermo();return false">Termo de uso e privacidade</a>'+(S.prefs&&S.prefs.termoAceito?' <span class="mut">(aceito em '+esc(dataHoraBr(S.prefs.termoAceito))+')</span>':'')+'</p>'+
    '<div class="m-acoes"><button class="btn dng" onclick="sair()">Sair</button><button class="btn" onclick="fecharModal()">Fechar</button><button class="btn pri" id="csB">Salvar senha</button></div>');
   $('#csB').onclick=()=>trocarSenha(async()=>{ fecharModal(); toast('Senha atualizada.','ok'); });
+  $('#cPref').onclick=async()=>{ const d={email:val('cEm'), emailResumo:$('#cRes').checked};
+    try{ await call('preferencias',d); S.prefs.email=d.email; S.prefs.emailResumo=d.emailResumo; toast('Preferências salvas.','ok'); }catch(e){} };
 }
 
 async function abrirNotif(){
   abrirModal('<h2>Notificações</h2><div id="nl"><div class="vazio">Carregando…</div></div><div class="m-acoes"><button class="btn" onclick="fecharModal()">Fechar</button></div>');
   let l=[]; try{ l=await call('notificacoes'); }catch(e){ return; }
   const box=$('#nl'); if(!box) return;
-  box.innerHTML = l.length ? l.map(n=>'<div class="notif '+(n.lida?'':'nl')+'" '+(n.registro_id?'onclick="fecharModal();ir(\'doc\',{id:\''+esc(n.registro_id)+'\'})"':'')+'>'+esc(n.mensagem)+'<small>'+dataHoraBr(n.criado_em)+'</small></div>').join('') : '<div class="vazio">Nenhuma notificação.</div>';
-  if(l.some(n=>!n.lida)){ call('marcarLidas',{},true).then(()=>{ S.naoLidas=0; pintarBadge(); }).catch(()=>{}); }
+  box.innerHTML = l.length ? l.map(n=>'<div class="notif '+(n.lembrete?'lemb ':'')+(n.lida?'':'nl')+'" '+(n.registro_id?'onclick="fecharModal();ir(\'doc\',{id:\''+esc(n.registro_id)+'\'})"':'')+'>'+esc(n.mensagem)+'<small>'+dataHoraBr(n.criado_em)+'</small></div>').join('') : '<div class="vazio">Nenhuma notificação.</div>';
+  if(l.some(n=>!n.lida && !n.lembrete)){ call('marcarLidas',{},true).then(()=>{ S.naoLidas=l.filter(n=>n.lembrete).length; pintarBadge(); }).catch(()=>{}); }
 }
 
 /* ======================= INÍCIO ======================= */
@@ -1297,6 +1396,62 @@ async function vInicio(){
 function kpiMeta(rot, n, meta){
   const p = meta ? Math.min(100, Math.round(n/meta*100)) : 0;
   return '<div class="kpi"><span>'+esc(rot)+'</span><b>'+n+'</b><small> / meta '+meta+'</small>'+barra(p)+'<small>'+p+'% da meta</small></div>';
+}
+
+/* ======================= INDICADORES DA VIGILÂNCIA NO PAINEL ======================= */
+const VIGI_FAIXA=v=>v>75?'Ótimo':v>50?'Bom':v>25?'Suficiente':'Regular';
+async function carregarVigi(){
+  const box=$('#pVigi'); if(!box) return;
+  box.innerHTML='<h3 class="sec-t">Indicadores da APS · Vigilância</h3><div class="card vazio">Carregando resultados…</div>';
+  let r; try{ r=await call('vigiResultados',{unidade:S.pUn},true); }catch(e){ box.innerHTML='<h3 class="sec-t">Indicadores da APS · Vigilância</h3><div class="card vazio">Não foi possível carregar: '+esc(msgErro(e))+'</div>'; return; }
+  if(r.erro||!r.series||!r.series.length){ box.innerHTML='<h3 class="sec-t">Indicadores da APS · Vigilância</h3><div class="card vazio">'+esc(r.erro||r.aviso||'Sem resultados.')+'<br><small>Os resultados chegam aqui quando alguém da unidade gera as planilhas no site da Vigilância dos indicadores.</small></div>'; return; }
+  S.vigi=r.series; const eqs=[...new Set(r.series.map(x=>x.equipe))].sort((a,b)=>a==='UBS'?-1:b==='UBS'?1:a.localeCompare(b));
+  S.vigiEq=S.vigiEq&&eqs.indexOf(S.vigiEq)>-1?S.vigiEq:eqs[0];
+  const pinta=()=>{
+    const L=S.vigi.filter(x=>x.equipe===S.vigiEq), comps=[...new Set(L.map(x=>x.competencia))].sort().slice(-6), inds=[...new Set(L.map(x=>x.indicador))].sort();
+    const mes=c=>{ const p=c.split('-'); return ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][Number(p[1])-1]+'/'+p[0].slice(2); };
+    $('#vgTab').innerHTML='<table class="tab-vigi"><thead><tr><th>Indicador</th>'+comps.map(c=>'<th>'+mes(c)+'</th>').join('')+'<th>Evolução</th></tr></thead><tbody>'+inds.map(ind=>{
+      const vals=comps.map(c=>{ const x=L.find(y=>y.indicador===ind&&y.competencia===c); return x?x.valor:null; }); const nome=(L.find(y=>y.indicador===ind)||{}).nome||'';
+      const ult=vals.filter(v=>v!==null), d=ult.length>1?ult[ult.length-1]-ult[ult.length-2]:null;
+      return '<tr><td><b>'+esc(ind)+'</b> <small class="mut">'+esc(nome)+'</small></td>'+vals.map(v=>v===null?'<td class="mut">—</td>':'<td class="vg '+VIGI_FAIXA(v)+'">'+String(Math.round(v*10)/10).replace('.',',')+'</td>').join('')+
+        '<td>'+(d===null?'<span class="mut">—</span>':'<b class="'+(d>0?'up':d<0?'down':'')+'">'+(d>0?'▲ +':d<0?'▼ ':'= ')+String(Math.round(d*10)/10).replace('.',',')+'</b>')+'</td></tr>'; }).join('')+'</tbody></table>'; };
+  box.innerHTML='<h3 class="sec-t">Indicadores da APS · Vigilância</h3><div class="card"><div class="filtros" style="margin:0 0 8px"><label>Equipe<select id="vgEq">'+eqs.map(e=>'<option'+(e===S.vigiEq?' selected':'')+'>'+esc(e)+'</option>').join('')+'</select></label></div>'+
+    '<div style="overflow-x:auto" id="vgTab"></div><p class="mut sm" style="margin:8px 0 0">Resultado em pontos por competência (último envio de cada mês pelo site da Vigilância). Faixas: Regular ≤25 · Suficiente >25 · Bom >50 · Ótimo >75. Sem dados de pacientes.</p></div>';
+  $('#vgEq').onchange=e=>{ S.vigiEq=e.target.value; pinta(); }; pinta();
+}
+
+/* ======================= BUSCA GERAL ======================= */
+async function vBusca(p){
+  const q=(p&&p.q)||''; const f=document.querySelector('.busca-top input'); if(f) f.value=q;
+  view('<div class="pg-head"><div class="pg-tit">'+bolha('busca')+'<div><h1>Resultados da busca</h1><p class="mut sm">“'+esc(q)+'”</p></div></div></div><div id="bRes"><div class="vazio">Buscando…</div></div>');
+  let r; try{ r=await call('buscar',{q:q}); }catch(e){ return; }
+  const box=$('#bRes'); if(!box) return;
+  const pes=r.pessoas.map(u=>'<div class="card" style="margin:0"><b>'+esc(u.nome)+'</b><div class="reg-meta">'+esc(PERFIL_NOME[u.perfil]||u.perfil)+(u.categoria?' · '+esc(u.categoria):'')+(u.ano?' · '+esc(u.ano):'')+(u.equipe?' · '+esc(u.equipe):'')+'</div>'+
+    '<div class="reg-acoes"><button class="btn sm" onclick="ir(\'busca\',{q:\''+esc(u.nome).replace(/'/g,'')+'\'})">Ver documentos</button></div></div>').join('');
+  box.innerHTML=(r.pessoas.length?'<h3 class="sec-t">Pessoas</h3><div class="grid g2">'+pes+'</div>':'')+
+    '<h3 class="sec-t">Documentos ('+r.docs.length+')</h3>'+listaCards(r.docs,'Nenhum documento encontrado. Tente outro nome, tema ou data (dd/mm/aaaa).');
+}
+
+/* ======================= AUDITORIA ======================= */
+async function vAuditoria(){
+  if(['supervisor','admin'].indexOf(S.eu.perfil)===-1) return ir('inicio');
+  S.aud=S.aud||{de:primeiroDia(), ate:hoje(), q:'', acao:''};
+  view('<div class="pg-head"><div class="pg-tit">'+bolha('auditoria')+'<div><h1>Auditoria</h1><p class="mut sm">Quem acessou, excluiu, mesclou ou alterou o quê. Mostra os registros mais recentes do log da plataforma.</p></div></div><button class="btn" id="aCsv">Exportar CSV</button></div>'+
+    '<div class="filtros"><label>De<input type="date" id="aDe" value="'+S.aud.de+'"></label><label>Até<input type="date" id="aAte" value="'+S.aud.ate+'"></label>'+
+    '<label>Ação<select id="aAc"><option value="">Todas</option><option value="login">Acessos</option><option value="excluir">Exclusões</option><option value="mesclar">Duplicados mesclados</option><option value="salvar_usuario">Cadastros de usuário</option><option value="resetar_senha">Senhas redefinidas</option><option value="redefinir_senha">Senha redefinida por e-mail</option><option value="assinar">Assinaturas</option><option value="salvar_">Documentos salvos</option><option value="escala">Escalas</option><option value="aceite_termo">Aceite do termo</option></select></label>'+
+    '<label>Buscar<input type="search" id="aQ" placeholder="Nome ou detalhe" value="'+esc(S.aud.q)+'"></label><button class="btn sm" id="aOk">Filtrar</button></div><div id="aRes"><div class="vazio">Carregando…</div></div>');
+  $('#aAc').value=S.aud.acao;
+  const carregar=async()=>{ S.aud={de:val('aDe'), ate:val('aAte'), q:val('aQ'), acao:val('aAc')};
+    let r; try{ r=await call('auditoria',S.aud); }catch(e){ return; } S.audRes=r.linhas;
+    const box=$('#aRes'); if(!box) return;
+    box.innerHTML='<p class="mut sm">'+r.total+' registro(s)'+(r.total>=1500?' (limite de 1.500; refine os filtros)':'')+'</p>'+(r.linhas.length?'<div class="card" style="padding:0;overflow-x:auto"><table class="tab-aud"><thead><tr><th>Quando</th><th>Quem</th><th>O quê</th><th>Detalhe</th></tr></thead><tbody>'+
+      r.linhas.map(x=>'<tr class="ac-'+esc(x.acao.split('_')[0])+'"><td>'+esc(dataHoraBr(x.quando))+'</td><td>'+esc(x.usuario)+'</td><td>'+esc(x.descricao)+'</td><td class="mut">'+esc(x.detalhe)+'</td></tr>').join('')+'</tbody></table></div>':'<div class="card vazio">Nenhum registro no período.</div>'); };
+  $('#aOk').onclick=carregar; $('#aQ').onkeydown=e=>{ if(e.key==='Enter') carregar(); };
+  $('#aCsv').onclick=()=>{ const L=S.audRes||[]; if(!L.length) return toast('Nada para exportar.','err');
+    const q=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
+    const csv='\ufeff'+['Quando;Quem;Ação;Detalhe'].concat(L.map(x=>[dataHoraBr(x.quando),x.usuario,x.descricao,x.detalhe].map(q).join(';'))).join('\r\n');
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='auditoria_'+S.aud.de+'_'+S.aud.ate+'.csv'; document.body.appendChild(a); a.click(); a.remove(); };
+  carregar();
 }
 
 /* ======================= MEUS DOCUMENTOS (residente) ======================= */
@@ -1944,6 +2099,7 @@ async function vDoc(p){
 
   let bt='<button class="btn" onclick="voltar()">Voltar</button><button class="btn" onclick="window.print()">Imprimir / PDF</button>';
   if(F.pdfAbnt) bt+='<button class="btn" onclick="gerarPdfPI()">PDF em ABNT</button>';
+  if(r.tipo==='CANAL' || r.tipo==='TEORICO') bt+='<button class="btn pri" onclick="canalParaMeta4()">Registrar na Meta 4</button>';
   if(r.podeEditar && r.status==='rascunho') bt+='<button class="btn dng" onclick="excluirReg(\''+r.id+'\')">Excluir rascunho</button>';
   if(r.podeEditar) bt+='<button class="btn" onclick="ir(\'editar\',{tipo:\''+r.tipo+'\',id:\''+r.id+'\'})">'+(r.tipo==='PI'?'Continuar preenchimento':'Editar')+'</button>';
   if(r.minhaAssinatura) bt+='<button class="btn pri" onclick="assinarDoc(\''+r.id+'\')">Assinar documento</button>';
@@ -1961,6 +2117,21 @@ async function vDoc(p){
     (r.tipo==='PI'&&r.editor?'<div><span>Última alteração</span><b>'+esc(r.editor)+(r.atualizado_em?' · '+dataHoraBr(r.atualizado_em):'')+'</b></div>':'')+'</div>'+
     corpo+ass+'</div><div class="barra-acoes no-print">'+bt+'</div>');
   carregarMiniaturas($('#view'));
+}
+
+/* Encontro do canal teórico ou de núcleo → registro da Meta 4, já preenchido */
+function canalParaMeta4(){
+  const r=S.docAtual; if(!r) return; const c=r.conteudo||{};
+  const nomes=(c.presentes||[]).map(nomeU).filter(Boolean);
+  const titulo=r.tipo==='TEORICO'?'Canal teórico'+(c.tema?': '+c.tema:''):'Canal de núcleo – '+(c.nucleo||'')+(c.tema?': '+c.tema:'');
+  const det=[(r.tipo==='TEORICO'?'Encontro do canal teórico':'Encontro do canal de núcleo de '+(c.nucleo||''))+(c.tema?' sobre “'+c.tema+'”':'')+'.',
+    c.facilitador?'Facilitação: '+c.facilitador+'.':'', nomes.length?nomes.length+' residente(s) presente(s): '+nomes.join(', ')+'.':'', c.resumo||'', c.artigo_ref?'Referência discutida: '+c.artigo_ref:''].filter(Boolean).join('\n');
+  const anx=k=>(c[k]||[]).filter(a=>a&&a.id);
+  const conteudo={responsavel:S.eu.nome, vinculo:S.eu.perfil==='residente'?'Residente':S.eu.perfil==='preceptor'?'Preceptor(a)':'Servidor(a) / Funcionário(a)', categoria:S.eu.categoria||'',
+    modalidade:'Atividade', tipo_ativ:'Canal teórico / Canal de núcleo', nome_ativ:titulo, detalhamento:det, objetivo:c.tema?'Discutir '+c.tema+' com os residentes, à luz das evidências e da prática na APS.':'', resultado:c.encaminhamentos||'',
+    presenca:anx('ata_canal'), fotos:anx('documentos').concat(anx('artigo')).filter(a=>String(a.mime).indexOf('image/')===0)};
+  ir('editar',{tipo:'META4', dados:{conteudo:conteudo, data:r.data, hora:r.hora||'', etapa:'0'}});
+  toast('Registro da Meta 4 preenchido a partir do encontro. Confira, complete o que faltar e envie.','ok');
 }
 
 function assinarDoc(id){
@@ -2096,7 +2267,7 @@ async function vPainel(){
     ? '<label>Unidade<select id="pUn">'+S.config.unidades.map(u=>'<option'+(u===S.pUn?' selected':'')+'>'+esc(u)+'</option>').join('')+'</select></label>' : '';
   view(faixaLogos('esq')+'<div class="pg-head"><div><h1>Painel mensal da preceptoria</h1><p class="mut sm">Cumprimento das atividades pedagógicas protegidas por preceptor.</p></div>'+
     '<button class="btn" id="pExp">Gerar aba na planilha</button></div>'+
-    '<div class="filtros"><label>Mês<input type="month" id="pMes" value="'+S.pMes+'"></label>'+unSel+'</div><div id="pn"><div class="vazio">Carregando…</div></div>');
+    '<div class="filtros"><label>Mês<input type="month" id="pMes" value="'+S.pMes+'"></label>'+unSel+'</div><div id="pn"><div class="vazio">Carregando…</div></div><div id="pVigi"></div>');
   $('#pMes').onchange=e=>{ S.pMes=e.target.value||mesAtual(); carregarPainel(); };
   if($('#pUn')) $('#pUn').onchange=e=>{ S.pUn=e.target.value; carregarPainel(); };
   $('#pExp').onclick=async()=>{ try{ const r=await call('exportarPainel',{mes:S.pMes, unidade:S.pUn}); abrirModal('<h2>Aba gerada</h2><p>A aba <b>'+esc(r.aba)+'</b> foi criada na planilha da plataforma.</p><p><a href="'+esc(r.url)+'" target="_blank" rel="noopener">Abrir planilha</a></p><div class="m-acoes"><button class="btn" onclick="fecharModal()">Fechar</button></div>'); }catch(e){} };
@@ -2105,6 +2276,7 @@ async function vPainel(){
 
 async function carregarPainel(){
   let p; try{ p=await call('painel',{mes:S.pMes, unidade:S.pUn}); }catch(e){ return; }
+  setTimeout(carregarVigi, 50);
   const box=$('#pn'); if(!box) return;
   if(!p.linhas.length){ box.innerHTML='<div class="card vazio">Nenhum preceptor ativo cadastrado nesta unidade.</div>'; return; }
   const soma=k=>p.linhas.reduce((s,l)=>s+l[k],0);
@@ -2667,7 +2839,7 @@ async function vFrequencia(){
   await fqCarregar();
 }
 function fqPintarAbas(){
-  const a=[['registrar','Registrar'],['historico','Meu histórico']]; if(fqGestao()) a.push(['painel','Painel'],['config','Configurar']);
+  const a=[['registrar','Registrar'],['historico','Meu histórico'],['conferencia','Conferência com a escala']]; if(fqGestao()) a.push(['painel','Painel'],['config','Configurar']);
   if(S.eu.perfil==='admin') a.splice(0,2);
   if(!a.some(x=>x[0]===FQ.aba)) FQ.aba=a[0][0];
   const t=$('#fqTabs'); if(t) t.innerHTML=a.map(x=>'<button class="'+(x[0]===FQ.aba?'on':'')+'" onclick="fqIr(\''+x[0]+'\')">'+x[1]+'</button>').join('');
@@ -2675,7 +2847,9 @@ function fqPintarAbas(){
 async function fqIr(a){ FQ.aba=a; FQ.detalhe=null; fqPintarAbas(); await fqCarregar(); }
 async function fqCarregar(){
   try{
-    if(FQ.aba==='registrar' || FQ.aba==='historico'){
+    if(FQ.aba==='conferencia'){
+      FQ.conf=await call('freqConferencia',{mes:FQ.mes||mesAtual()});
+    } else if(FQ.aba==='registrar' || FQ.aba==='historico'){
       const r=await call('freqInicio',{mes:FQ.mes});
       FQ.dados=r; FQ.offset=fqMin(r.agora)*60000-Date.now();
     } else {
@@ -2691,7 +2865,23 @@ function fqRender(){
   if(FQ.aba==='registrar') b.innerHTML=fqTelaRegistrar();
   else if(FQ.aba==='historico') b.innerHTML=fqTelaHistorico(S.eu, FQ.dados.meus, FQ.dados.grade, false);
   else if(FQ.aba==='painel') b.innerHTML= FQ.detalhe ? fqTelaDetalhe() : fqTelaPainel();
+  else if(FQ.aba==='conferencia') b.innerHTML=fqTelaConferencia();
   else b.innerHTML=fqTelaConfig();
+}
+
+/* ----- conferência: frequência × escala ----- */
+function fqTelaConferencia(){
+  const r=FQ.conf; if(!r) return '<div class="card vazio">Carregando…</div>';
+  const NOM={falta:'Falta',atraso:'Atraso',saida_antecipada:'Saída antecipada',sem_saida:'Sem saída',sem_entrada:'Sem entrada'};
+  const tot=r.pessoas.reduce((a,p)=>a+(p.semJustificativa||0),0);
+  return '<div class="card"><div class="filtros" style="margin:0"><label>Mês<input type="month" value="'+esc(r.mes)+'" onchange="FQ.mes=this.value||FQ.mes;fqCarregar()"></label></div>'+
+    '<p class="mut sm" style="margin:8px 0 0">Compara as entradas e saídas registradas com o horário previsto na escala (primeiro e último horário com atividade no dia). Dias de feriado, férias e estágio não entram. Tolerância: '+r.tolerancia+' min.</p></div>'+
+    '<div class="grid g4" style="margin-bottom:12px"><div class="kpi"><span>Pessoas</span><b>'+r.pessoas.length+'</b></div><div class="kpi"><span>Ocorrências sem justificativa</span><b style="color:var(--err)">'+tot+'</b></div></div>'+
+    r.pessoas.map(p=>'<div class="card"><div class="ul"><div><b>'+esc(p.nome)+'</b><div class="reg-meta">'+esc(PERFIL_NOME[p.perfil]||p.perfil)+(p.categoria?' · '+esc(p.categoria):'')+'</div></div>'+
+      (p.semEscala?'<span class="chip st-rascunho">Sem escala cadastrada</span>':'<span class="chip '+(p.semJustificativa?'st-aguardando':'st-assinado')+'">'+p.diasOk+' de '+p.diasPrevistos+' dias conferem</span>')+'</div>'+
+      (p.ocorrencias.length?'<div style="overflow-x:auto"><table class="tab-aud"><thead><tr><th>Dia</th><th>Previsto</th><th>Ocorrência</th><th>Justificativa</th></tr></thead><tbody>'+
+        p.ocorrencias.map(o=>'<tr><td>'+dataBr(o.data)+'</td><td>'+esc(o.previsto)+'</td><td><span class="oc oc-'+o.tipo+'">'+esc(NOM[o.tipo]||o.tipo)+'</span> '+esc(o.texto)+'</td><td>'+(o.justificativa?esc(o.justificativa):'<b style="color:var(--err)">sem justificativa</b>')+'</td></tr>').join('')+'</tbody></table></div>'
+        :(p.semEscala?'':'<p class="mut sm" style="margin:6px 0 0">Sem ocorrências no mês.</p>'))+'</div>').join('');
 }
 
 /* ----- localização ----- */
