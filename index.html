@@ -160,11 +160,12 @@ details.etapa[open] summary{border-bottom:1px solid var(--bd);margin-bottom:12px
 .pdi-fb{border:1px dashed var(--pri);background:var(--pri2);border-radius:10px;padding:10px 12px;margin-bottom:12px}
 .pdi-fb-i{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid var(--bd)}
 .pdi-fb-i:first-of-type{border-top:0}
-.fl-tab td,.fl-tab th{padding:4px 6px;white-space:nowrap}.fl-tab input[type=time]{min-width:92px;padding:4px 6px}
+.fl-tab td,.fl-tab th{padding:4px 6px;white-space:nowrap}.fl-tab input{width:66px;padding:5px 6px;text-align:center;font-variant-numeric:tabular-nums}
 .fl-tab tr.fds td{background:#f3f6fa;color:var(--mut)}.fl-h{font-weight:700}
 .fl-tot{margin:4px 0 8px;font-size:.95rem}
 .fl-info{background:var(--pri2);border-color:#c9d8ea;font-size:.92rem}
-@media (max-width:600px){.acts .ic-sug{display:none}.fl-tab td,.fl-tab th{padding:3px 2px}.fl-tab input[type=time]{min-width:0;width:74px;padding:3px 2px;font-size:.8rem}.fl-tab small{display:none}}
+.fl-tab input.fl-conf{background:#fff3c4;border-color:#c9932f}.fl-conf-leg{background:#fff3c4;border-radius:6px;padding:1px 6px;font-weight:600}
+@media (max-width:600px){.acts .ic-sug{display:none}.fl-tab td,.fl-tab th{padding:3px 2px}.fl-tab input{width:54px;padding:4px 2px;font-size:.85rem}.fl-tab small{display:none}}
 .fl-foto{position:relative;display:inline-block}.fl-foto img{width:96px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);cursor:pointer}
 .fl-foto .x{position:absolute;top:-6px;right:-6px;background:#fff;border-radius:50%;width:22px;height:22px;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
@@ -3398,7 +3399,7 @@ function flTelaResidente(){
   if(atual) h+='<div class="card"><div class="ul"><div><b>Folha de '+mesBr(FL.mes)+'</b><div class="reg-meta">Enviada em '+dataHoraBr(atual.enviado_em)+' · '+flHoras(atual.total_min)+' em '+atual.dias.length+' dia(s)</div></div><span class="chip '+FL_CHIP[atual.status]+'">'+FL_ST[atual.status]+'</span></div>'+
     (atual.status!=='enviada' && atual.conferido_por?'<p class="sm" style="margin:6px 0 0">'+(atual.status==='confirmada'?'Recebimento confirmado':'Devolvida')+' por '+esc(atual.conferido_por)+' em '+dataHoraBr(atual.conferido_em)+(atual.obs?' · <b>'+esc(atual.obs)+'</b>':'')+'</p>':'')+'</div>';
   if(trav) h+='<div class="card">'+flTabelaLeitura(atual)+'</div>';
-  else h+='<div class="card"><h3 class="sec" style="margin-top:0">1. Foto da folha de '+mesBr(FL.mes)+'</h3><p class="mut sm">Fotografe a folha inteira, de cima, com boa luz e sem cortes. Até 4 fotos (por exemplo, frente e verso).</p>'+
+  else h+='<div class="card"><h3 class="sec" style="margin-top:0">1. Foto da folha de '+mesBr(FL.mes)+'</h3><p class="mut sm">Fotografe a folha <b>inteira e de frente</b> (celular paralelo à folha), com boa luz, sem sombra e sem cortar a tabela. A leitura funciona melhor com horários escritos em caneta azul. Até 4 fotos (por exemplo, frente e verso).</p>'+
       '<div class="anx" id="flFotos"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><label class="btn sm pri anx-add"><input type="file" accept="image/*" capture="environment" onchange="flFoto(this)"> 📷 Tirar foto</label><label class="btn sm anx-add"><input type="file" accept="image/*" onchange="flFoto(this)"> 🖼️ Escolher da galeria</label></div></div>'+
     '<div class="card"><h3 class="sec" style="margin-top:0">2. Horários do mês</h3><p class="mut sm">Use <b>Ler horários da foto</b> para preencher automaticamente e confira dia a dia: a leitura pode errar em letra manuscrita. Você também pode digitar os horários.</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button type="button" class="btn sm" id="flOcr" onclick="flLer()">🔎 Ler horários da foto</button><button type="button" class="btn sm" onclick="flLimpar()">Limpar tabela</button></div><div id="flOcrMsg" class="mut sm" style="margin-bottom:6px"></div>'+
@@ -3426,6 +3427,142 @@ async function flFoto(input){
     FL.thumbs[r.id]=durl; FL.edit.anexos.push(r.id); flPintarFotos(); toast('Foto enviada. Agora use “Ler horários da foto”.','ok');
   }catch(e){ toast('Não foi possível enviar a foto: '+msgErro(e),'err'); }
 }
+/* ---------- Leitura da folha de frequência: tinta da caneta + grade da tabela + rede de dígitos manuscritos ---------- */
+let FL_REDE=null;
+async function flRede(){
+  if(FL_REDE) return FL_REDE;
+  const j=window.FL_PESOS || await (await fetch('digitos.json',{cache:'force-cache'})).json();
+  const R={};
+  Object.keys(j).forEach(k=>{ const b=atob(j[k].d), a=new Float32Array(b.length); for(let i=0;i<b.length;i++){ let v=b.charCodeAt(i); if(v>127) v-=256; a[i]=v*j[k].k; } R[k]={s:j[k].s, a:a}; });
+  return (FL_REDE=R);
+}
+/* rede: conv3x3(16)→relu→pool2→conv3x3(32)→relu→pool2→dense(64)→relu→dense(10) */
+function flConv(inp, C, H, W, w, b, F){ const Ho=H-2, Wo=W-2, out=new Float32Array(F*Ho*Wo);
+  for(let f=0;f<F;f++) for(let y=0;y<Ho;y++) for(let x=0;x<Wo;x++){ let s=b[f];
+    for(let c=0;c<C;c++){ const wb=((f*C+c)*3)*3, ib=c*H*W; for(let ky=0;ky<3;ky++){ const r=ib+(y+ky)*W+x, wr=wb+ky*3; s+=inp[r]*w[wr]+inp[r+1]*w[wr+1]+inp[r+2]*w[wr+2]; } }
+    out[(f*Ho+y)*Wo+x]=s>0?s:0; }
+  return out; }
+function flPool(inp, C, H, W){ const Ho=H>>1, Wo=W>>1, out=new Float32Array(C*Ho*Wo);
+  for(let c=0;c<C;c++) for(let y=0;y<Ho;y++) for(let x=0;x<Wo;x++){ const i=c*H*W+2*y*W+2*x; out[(c*Ho+y)*Wo+x]=Math.max(inp[i],inp[i+1],inp[i+W],inp[i+W+1]); }
+  return out; }
+function flDense(inp, w, b, relu){ const O=b.length, I=inp.length, out=new Float32Array(O); for(let o=0;o<O;o++){ let s=b[o]; const r=o*I; for(let i=0;i<I;i++) s+=w[r+i]*inp[i]; out[o]=relu&&s<0?0:s; } return out; }
+function flClassifica(R, img28){
+  let x=flPool(flConv(img28,1,28,28,R['c1.weight'].a,R['c1.bias'].a,16),16,26,26);
+  x=flPool(flConv(x,16,13,13,R['c2.weight'].a,R['c2.bias'].a,32),32,11,11);
+  x=flDense(flDense(x,R['f1.weight'].a,R['f1.bias'].a,true),R['f2.weight'].a,R['f2.bias'].a,false);
+  const m=Math.max.apply(null,x); let s=0; for(let i=0;i<10;i++) s+=Math.exp(x[i]-m); const ls=Math.log(s)+m;
+  const P=Array.from(x,v=>v-ls);
+  // confusões típicas da escrita à mão (ex.: 7 escrito como 1, 9 como 4), com penalidade
+  const CONF={7:[[1,1.0],[3,2.0],[2,2.5]],1:[[7,1.5]],9:[[4,1.5],[7,2.5]],4:[[9,1.5],[1,2.5]],0:[[6,2.0],[9,2.5],[8,2.5]],3:[[5,2.0]],5:[[3,2.0],[6,2.0]],2:[[7,2.5]],8:[[0,2.5],[3,2.5]],6:[[0,2.0]]};
+  const Q=P.slice(); Object.keys(CONF).forEach(d=>CONF[d].forEach(([c,pen])=>{ Q[d]=Math.max(Q[d],P[c]-pen); }));
+  return Q;
+}
+/* normaliza um dígito (máscara binária) para 28×28 no padrão MNIST: caixa de 20 px, centro de massa no meio, traço engrossado */
+function fl28(m, cw, ch, x0, x1){
+  let a=1e9,b=-1,c=1e9,d=-1; for(let y=0;y<ch;y++) for(let x=x0;x<=x1;x++) if(m[y*cw+x]){ if(x<a)a=x; if(x>b)b=x; if(y<c)c=y; if(y>d)d=y; }
+  if(b<0) return null;
+  const w=b-a+1, h=d-c+1, s=20/Math.max(w,h), nw=Math.max(1,Math.round(w*s)), nh=Math.max(1,Math.round(h*s));
+  // média por área (igual ao redimensionamento usado no treino)
+  const t=new Float32Array(nw*nh); let mx=0;
+  for(let ty=0;ty<nh;ty++){ const ya=Math.floor(ty*h/nh), yb=Math.ceil((ty+1)*h/nh);
+    for(let tx=0;tx<nw;tx++){ const xa=Math.floor(tx*w/nw), xb=Math.ceil((tx+1)*w/nw); let s=0;
+      for(let y=ya;y<yb;y++) for(let x=xa;x<xb;x++) s+=m[(c+y)*cw+a+x]; const v=s/((yb-ya)*(xb-xa)); t[ty*nw+tx]=v; if(v>mx) mx=v; } }
+  let sy=0,sx=0,sn=0; for(let y=0;y<nh;y++) for(let x=0;x<nw;x++){ t[y*nw+x]/=(mx||1); if(t[y*nw+x]>0.2){ sy+=y; sx+=x; sn++; } }
+  const cy=sn?sy/sn:nh/2, cx=sn?sx/sn:nw/2;
+  let oy=Math.round(14-cy), ox=Math.round(14-cx); oy=Math.min(Math.max(oy,0),28-nh); ox=Math.min(Math.max(ox,0),28-nw);
+  const o=new Float32Array(784); for(let y=0;y<nh;y++) for(let x=0;x<nw;x++) o[(oy+y)*28+ox+x]=t[y*nw+x];
+  const r=new Float32Array(784); for(let y=0;y<28;y++) for(let x=0;x<28;x++){ let v=0; for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const yy=y+dy, xx=x+dx; if(yy>=0&&yy<28&&xx>=0&&xx<28&&o[yy*28+xx]>v) v=o[yy*28+xx]; } r[y*28+x]=Math.min(1,v*0.6+o[y*28+x]*0.4); }
+  return r;
+}
+/* melhor pontuação para cada par de dígitos na região [x0,x1], testando vários pontos de corte */
+function flPar(R, m, cw, ch, x0, x1){
+  const w=x1-x0+1; if(w<6) return null;
+  const col=[]; for(let x=x0;x<=x1;x++){ let s=0; for(let y=0;y<ch;y++) s+=m[y*cw+x]; col.push(s); }
+  const cortes=new Set(); for(let z=Math.max(2,Math.floor(w*0.28)); z<=Math.min(w-2,Math.floor(w*0.72)); z+=2) cortes.add(z);
+  for(let i=1;i<w;i++) if(col[i-1]===0 && col[i]>0) cortes.add(i);
+  const S=Array.from({length:10},()=>new Array(10).fill(-1e9));
+  cortes.forEach(z=>{ const A=fl28(m,cw,ch,x0,x0+z-1), B=fl28(m,cw,ch,x0+z,x1); if(!A||!B) return; const pa=flClassifica(R,A), pb=flClassifica(R,B);
+    for(let i=0;i<10;i++) for(let j=0;j<10;j++){ const v=pa[i]+pb[j]; if(v>S[i][j]) S[i][j]=v; } });
+  return S;
+}
+const FL_FAIXA=[[5,11],[9,14],[11,16],[14,23]];
+/* lê uma célula: separa hora e minutos pelo vão central e escolhe o horário válido mais provável para a coluna */
+function flLerCelula(R, m, cw, ch, col){
+  const cs=[]; for(let x=0;x<cw;x++){ let s=0; for(let y=0;y<ch;y++) s+=m[y*cw+x]; cs.push(s); }
+  let B=[]; for(let x=0;x<cw;){ if(!cs[x]){ x++; continue; } let e=x, t=0; while(e<cw && cs[e]){ t+=cs[e]; e++; } B.push([x,e-1,t]); x=e; }
+  const mx=Math.max.apply(null,B.map(b=>b[2]).concat([0])); B=B.filter(b=>b[2]>Math.max(8,mx*0.15));
+  if(B.length<2) return null;
+  let corte=-1, best=-1; for(let i=1;i<B.length;i++){ const g=B[i][0]-B[i-1][1], meio=(B[i][0]+B[i-1][1])/2, sc=g*(1-Math.abs(meio-cw/2)/cw); if(sc>best){ best=sc; corte=i; } }
+  const hb=[B[0][0],B[corte-1][1]], mb=[B[corte][0],B[B.length-1][1]];
+  const Sh=flPar(R,m,cw,ch,hb[0],hb[1]), Sm=flPar(R,m,cw,ch,mb[0],mb[1]); if(!Sm) return null;
+  const um=fl28(m,cw,ch,hb[0],hb[1]), P1=um?flClassifica(R,um):null;
+  const f=FL_FAIXA[col], L=[];
+  for(let h=f[0];h<=f[1];h++){
+    const op=[]; if(Sh) op.push(Sh[Math.floor(h/10)][h%10]); if(h<10 && P1) op.push(P1[h]-1.0); if(!op.length) continue;
+    const sh=Math.max.apply(null,op);
+    for(let mm=0;mm<60;mm++) L.push([sh+Sm[Math.floor(mm/10)][mm%10]+(mm===0?1:mm%5===0?0.3:0), pad(h)+':'+pad(mm)]);
+  }
+  if(!L.length) return null; L.sort((a,b)=>b[0]-a[0]);
+  return {v:L[0][1], margem:L.length>1?L[0][0]-L[1][0]:9};
+}
+function flGrupos(L,tol){ const G=[]; L.forEach(a=>{ const g=G[G.length-1]; if(g && a-g[g.length-1]<=tol) g.push(a); else G.push([a]); }); return G.map(g=>Math.round(g.reduce((s,x)=>s+x,0)/g.length)); }
+function flImagem(src){ return new Promise((ok,err)=>{ const im=new Image(); im.onload=()=>ok(im); im.onerror=()=>err(new Error('Imagem inválida.')); im.src=src; }); }
+/* lê a folha inteira: devolve {dias:{d:{e1,s1,e2,s2}}, conferir:{d:[campos]}} */
+async function flLerFolha(src, ult, aviso){
+  const R=await flRede();
+  const img=await flImagem(src), W=1400, H=Math.round(img.height*1400/img.width);
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const cx=cv.getContext('2d'); cx.drawImage(img,0,0,W,H);
+  const px=cx.getImageData(0,0,W,H).data, N=W*H, lum=new Float32Array(N), azu=new Float32Array(N);
+  for(let i=0;i<N;i++){ const r=px[i*4], g=px[i*4+1], b=px[i*4+2]; lum[i]=(r+g+b)/3; azu[i]=b-(r+g)/2; }
+  let nT=0; const tinta=new Uint8Array(N); for(let i=0;i<N;i++) if(azu[i]>4 && lum[i]<175){ tinta[i]=1; nT++; }
+  const azul=nT>N*0.004;   // caneta azul; se não houver, usa traços escuros (caneta preta)
+  if(!azul) for(let i=0;i<N;i++) tinta[i]=lum[i]<110?1:0;
+  const esc=new Uint8Array(N); for(let i=0;i<N;i++) esc[i]=(lum[i]<160 && !(azul && tinta[i]))?1:0;
+  // colunas da tabela
+  const y0=Math.round(H*0.3), y1=Math.round(H*0.8), pv=[];
+  for(let x=0;x<W;x++){ let s=0; for(let y=y0;y<y1;y++) s+=esc[y*W+x]; pv.push(s/(y1-y0)); }
+  const V=flGrupos(pv.map((v,x)=>v>0.4?x:-1).filter(x=>x>=0),4); if(V.length<6) throw new Error('A tabela da folha não foi encontrada na foto.');
+  let i0=0; while(i0<V.length-5 && V[i0+1]-V[i0]>0.16*W) i0++;
+  const XS=V.slice(i0+1,i0+6);
+  // linhas da tabela (passo e início que melhor encaixam 31 dias)
+  let ys=[]; for(let c=0;c<4;c++){ const a=XS[c]+4, b=XS[c+1]-4; for(let y=0;y<H;y++){ let s=0; for(let x=a;x<b;x++) s+=esc[y*W+x]; if(s/(b-a)>0.45) ys.push(y); } }
+  ys=flGrupos(ys.sort((p,q)=>p-q),4);
+  const dif=[]; for(let i=1;i<ys.length;i++){ const d=ys[i]-ys[i-1]; if(d>H*0.012 && d<H*0.05) dif.push(d); }
+  if(dif.length<8) throw new Error('As linhas da tabela não foram encontradas na foto.');
+  dif.sort((a,b)=>a-b); const pm=dif[Math.floor(dif.length/2)]; let M=null;
+  for(let pp=pm*0.9; pp<=pm*1.1; pp+=0.2) ys.forEach(t=>{ let n=0,e=0; for(let r=0;r<=31;r++){ const al=t+r*pp; let dm=1e9; ys.forEach(y=>{ const d=Math.abs(y-al); if(d<dm) dm=d; }); if(dm<=Math.max(4,pp*0.2)){ n++; e+=dm; } }
+    const ant=ys.filter(y=>y<t-2), cab=ant.length && (t-ant[ant.length-1])>1.25*pp ? 1 : 0, sc=n*10+cab*5-e/10; if(!M || sc>M.sc) M={t:t,p:pp,sc:sc}; });
+  let p=M.p, t0=M.t; const pr=[]; for(let r=0;r<=31;r++){ const y=ys.find(y=>Math.abs(y-(t0+r*p))<=Math.max(4,p*0.2)); if(y!==undefined) pr.push([r,y]); }
+  if(pr.length>=6){ const n=pr.length, sx=pr.reduce((s,q)=>s+q[0],0), sy=pr.reduce((s,q)=>s+q[1],0), sxx=pr.reduce((s,q)=>s+q[0]*q[0],0), sxy=pr.reduce((s,q)=>s+q[0]*q[1],0); p=(n*sxy-sx*sy)/(n*sxx-sx*sx); t0=(sy-p*sx)/n; }
+  const K=['e1','s1','e2','s2'], dias={}, conferir={};
+  for(let r=0;r<Math.min(31,ult);r++){
+    const top=t0+r*p, bot=t0+(r+1)*p; if(bot>=H) break;
+    const lin={};
+    for(let c=0;c<4;c++){
+      const xa=XS[c]+4, xb=XS[c+1]-4, Y0=Math.max(0,Math.floor(top-0.45*p)), Y1=Math.min(H,Math.floor(bot+0.45*p)), cw=xb-xa, ch=Y1-Y0;
+      const m=new Uint8Array(cw*ch); for(let y=0;y<ch;y++) for(let x=0;x<cw;x++) m[y*cw+x]=tinta[(Y0+y)*W+xa+x];
+      // tira traços horizontais finos e longos (tracejado impresso), preservando o traço dos dígitos
+      const alt=new Uint8Array(cw*ch); for(let x=0;x<cw;x++){ let y=0; while(y<ch){ if(!m[y*cw+x]){ y++; continue; } let e=y; while(e<ch && m[e*cw+x]) e++; for(let z=y;z<e;z++) alt[z*cw+x]=Math.min(255,e-y); y=e; } }
+      for(let y=0;y<ch;y++){ let x=0; while(x<cw){ if(!m[y*cw+x]){ x++; continue; } let e=x; while(e<cw && m[y*cw+e]) e++; if(e-x>cw*0.22) for(let z=x;z<e;z++) if(alt[y*cw+z]<=3) m[y*cw+z]=0; x=e; } }
+      // mantém só os traços cujo centro está dentro da linha do dia
+      const lab=new Int32Array(cw*ch), ok=new Uint8Array(cw*ch); let nl=0, tot=0;
+      for(let s0=0;s0<cw*ch;s0++){ if(!m[s0] || lab[s0]) continue; nl++; const fila=[s0]; lab[s0]=nl; let k=0, sy=0;
+        while(k<fila.length){ const q=fila[k++], qy=(q/cw)|0, qx=q%cw; sy+=qy;
+          for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const yy=qy+dy, xx=qx+dx; if(yy<0||yy>=ch||xx<0||xx>=cw) continue; const z=yy*cw+xx; if(m[z] && !lab[z]){ lab[z]=nl; fila.push(z); } } }
+        let ymin=1e9, ymax=-1; fila.forEach(z=>{ const zy=(z/cw)|0; if(zy<ymin) ymin=zy; if(zy>ymax) ymax=zy; });
+        const cy=sy/fila.length+Y0, alto=ymax-ymin+1;   // traço achatado (tracejado, sublinhado) não é dígito
+        if(fila.length>=6 && alto>=Math.max(6,p*0.3) && cy>=top+1 && cy<=bot-1){ fila.forEach(z=>ok[z]=1); tot+=fila.length; } }
+      if(tot<40) continue;   // célula vazia
+      const res=flLerCelula(R, ok, cw, ch, c);
+      if(res){ lin[K[c]]=res.v; if(res.margem<0.5) (conferir[r+1]=conferir[r+1]||[]).push(K[c]); }
+    }
+    if(lin.e1 || lin.s1) dias[r+1]=lin;
+    if(aviso) aviso(r+1);
+    await new Promise(z=>setTimeout(z,0));   // mantém a tela responsiva
+  }
+  return {dias:dias, conferir:conferir};
+}
+
 /* Interpreta o texto lido da folha: cada linha com o dia e de 2 a 4 horários (entrada/saída da manhã e da tarde). */
 function flInterpretar(texto, ult){
   const out={}, semDia=[], RX=/\b([01]?\d|2[0-3]):([0-5]\d)\b/g;
@@ -3447,33 +3584,45 @@ async function flLer(){
   if(!E.anexos.length) return toast('Envie primeiro a foto da folha.','err');
   if(bt) bt.disabled=true;
   try{
-    msg.textContent='Carregando o leitor de texto (na primeira vez pode levar alguns segundos)…';
-    if(!window.Tesseract) await carregarScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
-    let texto='';
+    for(const id of E.anexos) if(!FL.thumbs[id]){ const a=await call('anexo',{id:id},true); FL.thumbs[id]='data:'+a.mime+';base64,'+a.base64; }
+    const ult=flUlt(FL.mes); let dias={}, conferir={}, lida=false;
+    // 1º: leitura da tabela (tinta da caneta + rede de dígitos manuscritos)
     for(let i=0;i<E.anexos.length;i++){
-      const id=E.anexos[i];
-      if(!FL.thumbs[id]){ const a=await call('anexo',{id:id},true); FL.thumbs[id]='data:'+a.mime+';base64,'+a.base64; }
-      msg.textContent='Lendo a foto '+(i+1)+' de '+E.anexos.length+'…';
-      const r=await Tesseract.recognize(FL.thumbs[id],'por'); texto+='\n'+((r&&r.data&&r.data.text)||'');
+      try{ msg.textContent='Lendo a tabela da foto '+(i+1)+' de '+E.anexos.length+'…';
+        const r=await flLerFolha(FL.thumbs[E.anexos[i]], ult, d=>{ msg.textContent='Lendo a foto '+(i+1)+': dia '+d+' de '+ult+'…'; });
+        Object.keys(r.dias).forEach(d=>{ if(!dias[d]){ dias[d]=r.dias[d]; if(r.conferir[d]) conferir[d]=r.conferir[d]; } }); lida=true;
+      }catch(e){ console.warn('leitura por tabela', e); }
     }
-    const dias=flInterpretar(texto, flUlt(FL.mes)), n=Object.keys(dias).length;
-    if(!n){ msg.textContent='Não foi possível identificar horários na foto. Tente uma foto mais nítida ou digite os horários na tabela.'; return; }
-    Object.keys(dias).forEach(d=>{ E.dias[d]=Object.assign({d:+d}, dias[d]); }); E.leitura='ocr';
-    flPintarTabela(); msg.innerHTML='<b>'+n+' dia(s) lido(s) da foto.</b> Confira cada linha com a folha assinada antes de enviar.';
+    // 2º (se a tabela não foi reconhecida): leitura do texto corrido
+    if(!Object.keys(dias).length){
+      msg.textContent='Carregando o leitor de texto…';
+      if(!window.Tesseract) await carregarScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+      let texto=''; for(let i=0;i<E.anexos.length;i++){ msg.textContent='Lendo o texto da foto '+(i+1)+'…'; const r=await Tesseract.recognize(FL.thumbs[E.anexos[i]],'por'); texto+='\n'+((r&&r.data&&r.data.text)||''); }
+      dias=flInterpretar(texto, ult); Object.keys(dias).forEach(d=>{ conferir[d]=['e1','s1','e2','s2']; });
+    }
+    const n=Object.keys(dias).length;
+    if(!n){ msg.textContent='Não foi possível identificar horários na foto. Fotografe a folha de frente, inteira e com boa luz, ou digite os horários na tabela.'; return; }
+    E.dias={}; Object.keys(dias).forEach(d=>{ E.dias[d]=Object.assign({d:+d}, dias[d]); }); E.conferir=conferir; E.leitura='ocr';
+    const nc=Object.keys(conferir).reduce((a,d)=>a+conferir[d].length,0);
+    flPintarTabela();
+    msg.innerHTML='<b>'+n+' dia(s) lido(s) da foto.</b> '+(nc?'<span class="fl-conf-leg">'+nc+' horário(s) em amarelo</span> com leitura incerta: confira com atenção. ':'')+'Confira todas as linhas com a folha assinada antes de enviar.';
   }catch(e){ msg.textContent='A leitura automática não está disponível agora ('+msgErro(e)+'). Digite os horários na tabela.'; }
   finally{ const b=$('#flOcr'); if(b) b.disabled=false; }
 }
 function flPintarTabela(){
   const b=$('#flTab'); if(!b) return; const E=FL.edit, ult=flUlt(FL.mes), p=FL.mes.split('-').map(Number), DS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   const L=[]; for(let d=1; d<=ult; d++){ const x=E.dias[d]||{}, w=new Date(p[0],p[1]-1,d).getDay(), min=flMinDia(x);
-    L.push('<tr class="'+(w===0||w===6?'fds':'')+'"><td><b>'+pad(d)+'</b> <small class="mut">'+DS[w]+'</small></td>'+['e1','s1','e2','s2'].map(k=>'<td><input type="time" aria-label="Dia '+d+' '+({e1:'entrada 1',s1:'saída 1',e2:'entrada 2',s2:'saída 2'}[k])+'" data-d="'+d+'" data-k="'+k+'" value="'+esc(x[k]||'')+'"></td>').join('')+'<td class="fl-h" id="flh_'+d+'">'+(min?flHoras(min):'')+'</td></tr>'); }
+    L.push('<tr class="'+(w===0||w===6?'fds':'')+'"><td><b>'+pad(d)+'</b> <small class="mut">'+DS[w]+'</small></td>'+['e1','s1','e2','s2'].map(k=>'<td><input type="text" inputmode="numeric" maxlength="5" placeholder="--:--" autocomplete="off"'+(((E.conferir||{})[d]||[]).indexOf(k)>-1?' class="fl-conf" title="Leitura incerta: confira com a folha"':'')+' aria-label="Dia '+d+' '+({e1:'entrada 1',s1:'saída 1',e2:'entrada 2',s2:'saída 2'}[k])+'" data-d="'+d+'" data-k="'+k+'" value="'+esc(x[k]||'')+'"></td>').join('')+'<td class="fl-h" id="flh_'+d+'">'+(min?flHoras(min):'')+'</td></tr>'); }
   b.innerHTML='<div class="fl-tot" id="flTot"></div><div class="tab-wrap"><table class="tab-aud fl-tab"><thead><tr><th>Dia</th><th>Entrada</th><th>Saída</th><th>Entrada</th><th>Saída</th><th>Horas</th></tr></thead><tbody>'+L.join('')+'</tbody></table></div>';
-  b.oninput=e=>{ const t=e.target; if(!t.dataset || !t.dataset.d) return; const d=+t.dataset.d; E.dias[d]=Object.assign(E.dias[d]||{d:d}); E.dias[d][t.dataset.k]=t.value;
+  b.oninput=e=>{ const t=e.target; if(!t.dataset || !t.dataset.d) return; const d=+t.dataset.d;
+    // digitação rápida: "0700" vira "07:00"
+    let v=t.value.replace(/[^0-9]/g,'').slice(0,4); if(v.length>=3) v=v.slice(0,2)+':'+v.slice(2); if(t.value!==v) t.value=v;
+    E.dias[d]=Object.assign(E.dias[d]||{d:d}); E.dias[d][t.dataset.k]=v.length===5?v:''; t.classList.remove('fl-conf');
     const min=flMinDia(E.dias[d]), c=$('#flh_'+d); if(c) c.textContent=min?flHoras(min):''; flTotal(); };
   flTotal();
 }
 function flTotal(){ const E=FL.edit; let t=0,n=0; Object.keys(E.dias).forEach(d=>{ const m=flMinDia(E.dias[d]); t+=m; if(m) n++; }); const el=$('#flTot'); if(el) el.innerHTML='Total do mês: <b>'+flHoras(t)+'</b> em <b>'+n+'</b> dia(s)'; }
-function flLimpar(){ FL.edit.dias={}; FL.edit.leitura='manual'; flPintarTabela(); }
+function flLimpar(){ FL.edit.dias={}; FL.edit.conferir={}; FL.edit.leitura='manual'; flPintarTabela(); }
 function flEnviar(){
   const E=FL.edit; if(!E.anexos.length) return toast('Envie a foto da folha de frequência.','err');
   const dias=Object.keys(E.dias).map(d=>E.dias[d]).filter(x=>flMinDia(x)>0);
