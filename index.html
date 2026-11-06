@@ -481,6 +481,8 @@ table.tab-aud,table.tab-vigi{width:100%;border-collapse:collapse;font-size:.86re
 .hora-trava{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#f1f5fa;border:1px solid var(--bd);border-radius:12px;padding:10px 14px;margin:4px 0 8px}.hora-trava>div{flex:1;min-width:200px}.ht-ic{font-size:1.4rem}
 .elo-marca{text-align:center;margin:0 0 6px}.elo-img{display:block;width:230px;max-width:80%;margin:0 auto 8px}
 .elo-m{display:block;width:96px;margin:0 auto 12px}.elo-m.lg{width:64px;margin:0}
+.logos.lg-lab{margin:-4px 0 10px;padding-bottom:10px;border-bottom:1px solid var(--bd)}.logos.lg-lab img{height:38px}
+.side-lab{padding:10px 14px 8px;border-top:1px solid var(--bd);text-align:center}.side-lab small{display:block;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:4px}.side-lab .logos{margin:0}.side-lab .logos img{height:34px;max-width:150px}
 .side-logo{width:74px;height:auto;flex:none;display:block}.elo-nome{display:block;font-size:2rem;font-weight:800;letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .elo-sub{display:block;font-size:.86rem;font-weight:600;color:var(--pri);margin-top:2px}
 .atalhos-ini{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
@@ -1167,6 +1169,7 @@ function inicioNormal(){
 function telaLogin(){
   $('#app').innerHTML =
    '<div class="login"><div class="card" id="fLogin">'+
+   faixaLogos('lg-lab')+
    '<div class="elo-marca"><img class="elo-img" src="'+ELO_LOGO+'" alt="Elo APS"><span class="elo-sub">Ensino e serviço na Atenção Primária · Dourados&#8209;MS</span></div>'+
    '<p class="mut sm" style="text-align:center;margin:0 0 14px">'+esc(S.programa)+' · Fiocruz / SEMS</p>'+
    '<div class="fld"><label class="lbl" for="lgU">Usuário</label><input type="text" id="lgU" autocomplete="username" autocapitalize="none"></div>'+
@@ -1305,6 +1308,7 @@ function montarShell(){
    '<div class="nv-grp">Outras ferramentas</div>'+LINKS_EXTERNOS.map(l=>
       '<a class="nv" href="'+l.url+'" target="_blank" rel="noopener" style="'+estiloCor(l.id)+'" onclick="menuLateral(false)"><span class="ic">'+svg(l.id)+'</span><span>'+esc(l.nome)+'</span><span class="ext">'+svg('externo')+'</span></a>').join('')+
    '</nav>'+
+   (S.logos.length?'<div class="side-lab"><small>Realização</small>'+faixaLogos()+'</div>':'')+
    '<div class="side-foot"><div class="avatar">'+esc(sigla.toUpperCase())+'</div><div style="min-width:0;flex:1"><b>'+esc(S.eu.nome)+'</b><small>'+esc(PERFIL_NOME[S.eu.perfil]||'')+'</small></div>'+
    '<button class="icon" title="Sair" onclick="sair()">'+svg('sair')+'</button></div></aside>'+
    '<div class="side-bg" onclick="menuLateral(false)"></div>'+
@@ -2435,7 +2439,7 @@ async function vPainel(){
   S.pMes = S.pMes || mesAtual(); S.pUn = S.pUn || S.eu.unidade;
   const unSel = S.eu.perfil==='admin' && S.config.unidades && S.config.unidades.length>1
     ? '<label>Unidade<select id="pUn">'+S.config.unidades.map(u=>'<option'+(u===S.pUn?' selected':'')+'>'+esc(u)+'</option>').join('')+'</select></label>' : '';
-  view('<div class="pg-head"><div><h1>Painel mensal da preceptoria</h1><p class="mut sm">Cumprimento das atividades pedagógicas protegidas por preceptor.</p></div>'+
+  view(faixaLogos('esq')+'<div class="pg-head"><div><h1>Painel mensal da preceptoria</h1><p class="mut sm">Cumprimento das atividades pedagógicas protegidas por preceptor.</p></div>'+
     '<button class="btn" id="pExp">Gerar aba na planilha</button></div>'+
     '<div class="filtros"><label>Mês<input type="month" id="pMes" value="'+S.pMes+'"></label>'+unSel+'</div><div id="pn"><div class="vazio">Carregando…</div></div><div id="pVigi"></div>');
   $('#pMes').onchange=e=>{ S.pMes=e.target.value||mesAtual(); carregarPainel(); };
