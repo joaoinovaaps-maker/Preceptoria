@@ -303,6 +303,12 @@ h3.sec{font-size:.95rem;color:var(--pri-d);border-bottom:1px solid var(--bd);pad
 .notif{padding:10px 0;border-bottom:1px solid var(--bd);cursor:pointer}
 .notif.nl{font-weight:600}.notif small{display:block;color:var(--mut);font-weight:400}
 .ul{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.comp{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:#eef6f2;border:1px solid #cfe5da;border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.comp .who{font-size:.9rem}.comp .who b{font-weight:700}.comp .ult{display:block;font-size:.8rem;color:var(--mut);margin-top:2px}
+.comp-novo{background:var(--warn2);color:var(--warn);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-weight:600;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.comp-lista{max-height:320px;overflow:auto;border:1px solid var(--bd,#dde5e2);border-radius:10px;padding:4px;margin:8px 0}
+.comp-lista label{display:flex;gap:10px;align-items:center;padding:7px 8px;border-radius:8px;cursor:pointer}.comp-lista label:hover{background:#f2f6f4}
+.comp-lista small{color:var(--mut)}
 .tag{font-size:.72rem;background:#eef1f0;border-radius:6px;padding:2px 7px;color:var(--mut)}
 
 @media (max-width:600px){
@@ -1102,6 +1108,7 @@ async function abrirNotif(){
 function minhaPendencia(r){ return r.assinaturas.some(a=>a.usuario_id===S.eu.id && a.status==='pendente'); }
 function podeAbrir(r){
   if(r.autor_id===S.eu.id || r.residente_id===S.eu.id) return true;
+  if((r.compartilhado||[]).indexOf(S.eu.id)>-1) return true;
   if(r.assinaturas.some(a=>a.usuario_id===S.eu.id)) return true;
   if(r.tipo==='FEEDBACK' || r.tipo==='SUPERVISAO') return false;
   return GESTAO.indexOf(S.eu.perfil)>-1;
@@ -1116,6 +1123,7 @@ function cardReg(r){
     '<div class="reg-tit">'+esc(r.titulo)+'</div>'+
     '<div class="reg-meta">'+dataBr(r.data)+(r.hora?' · '+esc(r.hora):'')+' · '+esc(pessoas)+(r.assinaturas.length?' · '+nAss+'/'+r.assinaturas.length+' assinaturas':'')+'</div>'+
     (r.tipo==='PI' ? '<div class="met"><div class="lin"><span>Preenchimento</span><b>'+r.progresso+'%</b></div>'+barra(r.progresso)+'</div>' : '')+
+    (r.tipo==='PI' && (r.compartilhado||[]).length ? '<div class="mut sm" style="margin-top:6px">👥 Compartilhado: '+esc([r.autor].concat(r.compartilhado_nomes||[]).join(', '))+(r.editor?' · última alteração por '+esc(r.editor.split(' ')[0])+(r.atualizado_em?' em '+dataHoraBr(r.atualizado_em):''):'')+'</div>' : '')+
     (minhaPendencia(r) ? '<div class="alerta">Aguardando sua assinatura</div>' : '')+
     (rasc ? '<div class="reg-acoes"><button class="btn sm" onclick="event.stopPropagation();ir(\'editar\',{tipo:\''+r.tipo+'\',id:\''+r.id+'\'})">Continuar</button><button class="btn sm dng" onclick="event.stopPropagation();excluirReg(\''+r.id+'\')">Excluir rascunho</button></div>' : '')+
     (!ab ? '<div class="mut sm" style="margin-top:6px">Conteúdo restrito '+(r.tipo==='SUPERVISAO'?'ao supervisor e ao preceptor':'ao preceptor e ao residente')+'.</div>' : '')+
@@ -1537,8 +1545,11 @@ function semanaEpi(iso){
 async function vEditar(p){
   const tipo=p.tipo, T=S.tipos[tipo], F=FORMS[tipo];
   let r={conteudo:{}, data:hoje(), hora:horaAgora(), residente_id:'', participantes:[], etapa:'0'};
-  if(p.id){ try{ r=await call('obter',{id:p.id}); }catch(e){ return voltar(); } }
+  if(p.id && !p.dados){ try{ r=await call('obter',{id:p.id}); }catch(e){ return voltar(); } }
+  if(p.dados) r=p.dados;
   S.edit={tipo:tipo, id:p.id||null, etapa:Number(r.etapa||0)};
+  if(tipo==='PI'){ S.edit.versao=r.versao||''; S.edit.base=JSON.parse(JSON.stringify(r.conteudo||{})); S.edit.compart=(r.compartilhado||[]).slice();
+    S.edit.souAutor=!p.id || r.souAutor!==false; S.edit.autor=r.autor||S.eu.nome; S.edit.editor=r.editor||''; S.edit.atualizado=r.atualizado_em||''; }
   Object.keys(DEF).forEach(k=>delete DEF[k]); Object.keys(ANEXOS).forEach(k=>delete ANEXOS[k]);
 
   let h='<div class="pg-head"><div><h1>'+(p.id?'Editar':'Novo')+' · '+esc(T.nome)+'</h1><p class="mut sm">'+esc(DESCR[tipo])+'</p></div></div><div class="card">';
@@ -1559,6 +1570,7 @@ async function vEditar(p){
   const partHTML = !F.participantes ? '' : campoHTML({id:'_part', label:'Lista de presença — participantes (recebem a ata para assinatura)', tipo:'multi', fonte:['preceptor','supervisor','admin','gestor','residente','colaborador'], excluirEu:true, obrig:true, agrupar:true, ajuda:'Inclui preceptores, residentes, gestão e demais servidores cadastrados. Quem não tem cadastro pode ser listado no campo “Demais participantes”.'}, r.participantes);
   h+='</div>';
 
+  if(tipo==='PI') h+='<div id="piComp">'+piCompHTML()+'</div><div id="piNovo"></div>';
   if(F.etapas && F.guiaLayout){
     h+=piLayoutHTML(F, r.conteudo);
   } else if(F.etapas){
@@ -1570,8 +1582,8 @@ async function vEditar(p){
   }
 
   let bt='<button class="btn" onclick="voltar()">Cancelar</button>';
-  bt+='<button class="btn dng'+(p.id?'':' hidden')+'" id="btExcl" onclick="excluirReg(S.edit.id)">'+(['CANAL','META4','PI'].indexOf(tipo)>-1?'Excluir':'Excluir rascunho')+'</button>';
-  if(tipo==='PI') bt+='<button class="btn" onclick="salvarReg(\'parcial\')">Salvar progresso</button><button class="btn pri" onclick="salvarReg(\'concluir\')">Concluir projeto</button>';
+  if(tipo!=='PI' || S.edit.souAutor) bt+='<button class="btn dng'+(p.id?'':' hidden')+'" id="btExcl" onclick="excluirReg(S.edit.id)">'+(['CANAL','META4','PI'].indexOf(tipo)>-1?'Excluir':'Excluir rascunho')+'</button>';
+  if(tipo==='PI') bt+='<button class="btn" onclick="salvarReg(\'parcial\')">Salvar progresso</button>'+(S.edit.souAutor?'<button class="btn pri" onclick="salvarReg(\'concluir\')">Concluir projeto</button>':'');
   else if(tipo==='CANAL' || tipo==='META4') bt+='<button class="btn pri" onclick="salvarReg(\'registrar\')">'+(tipo==='META4'?'Enviar registro':'Registrar')+'</button>';
   else bt+='<button class="btn" onclick="salvarReg(\'rascunho\')">Salvar rascunho</button><button class="btn pri" onclick="salvarReg(\'enviar\')">Assinar e enviar</button>';
   view(h+'<div class="barra-acoes no-print">'+bt+'</div>');
@@ -1587,6 +1599,7 @@ async function vEditar(p){
     atualizarPI();
     if(S.edit.etapa>0) setTimeout(()=>piIr(S.edit.etapa,true),60);
   }
+  if(tipo==='PI') piVigiar();
   const res=$('#f__res');
   if(res){ const info=()=>{ const u=S.usuarios.find(x=>x.id===val('f__res')); const c=catResidente(); $('#catInfo').textContent=(c?'Categoria: '+c:'')+(u&&u.ano?' · '+u.ano:'')+(u&&u.equipe?' · '+u.equipe:'');
       if(u&&u.ano&&DEF.ano&&DEF.ano.tipo==='chips'&&!lerCampo(DEF.ano)){ const x=document.querySelector('[name="f_ano"][value="'+u.ano+'"]'); if(x) x.checked=true; } };
@@ -1648,6 +1661,7 @@ function coletar(){
   if(F.etapas){
     const feitas=F.etapas.filter(e=>e.campos.some(c=>c.id&&c.tipo!=='calcCrono'&&!vazioCampo(c, conteudo[c.id]))).length;
     d.progresso=Math.round(feitas/F.etapas.length*100); d.etapa=String(S.edit.etapa); d.titulo=conteudo.titulo_pi||'';
+    if(tipo==='PI'){ d.versao=S.edit.versao||''; if(S.edit.souAutor) d.compartilhado=S.edit.compart||[]; }
   }
   if(tipo==='META4') d.titulo=(conteudo.tipo_ativ==='Outro'?(conteudo.tipo_outro||'Outra atividade'):(conteudo.tipo_ativ||'Atividade'))+' — '+dataBr(d.data);
   if(tipo==='CANAL') d.titulo='Canal de núcleo — '+(conteudo.nucleo||'')+(conteudo.tema?': '+conteudo.tema:'');
@@ -1689,14 +1703,73 @@ async function salvarReg(modo){
   }
   if(modo==='concluir'){
     return confirmar('Concluir projeto', 'Após a conclusão, o projeto não poderá mais ser editado. Deseja continuar?', 'Concluir', async ()=>{
-      d.concluir=true; try{ const r=await call('salvar', d); toast('Projeto concluído.','ok'); ir('doc',{id:r.id}); }catch(e){}
+      d.concluir=true; try{ const r=await call('salvar', d, d.tipo==='PI'); toast('Projeto concluído.','ok'); ir('doc',{id:r.id}); }catch(e){ if(d.tipo==='PI') piErroSalvar(e); }
     });
   }
   try{
-    const r=await call('salvar', d); S.edit.id=r.id; const bx=$('#btExcl'); if(bx) bx.classList.remove('hidden');
+    const r=await call('salvar', d, d.tipo==='PI'); S.edit.id=r.id; const bx=$('#btExcl'); if(bx) bx.classList.remove('hidden');
+    if(d.tipo==='PI'){ S.edit.versao=r.versao||S.edit.versao; S.edit.base=JSON.parse(JSON.stringify(d.conteudo)); S.edit.editor=S.eu.nome; S.edit.atualizado=r.atualizado_em||''; piPintarComp(); const nv=$('#piNovo'); if(nv) nv.innerHTML=''; }
     if(modo==='registrar'){ toast('Registro salvo.','ok'); return ir('doc',{id:r.id}); }
     toast(modo==='parcial' ? 'Progresso salvo ('+d.progresso+'% preenchido).' : 'Rascunho salvo.','ok');
-  }catch(e){}
+  }catch(e){ if(d.tipo==='PI') piErroSalvar(e); }
+}
+
+/* ---------- Projeto de intervenção compartilhado ---------- */
+function piCompHTML(){
+  const E=S.edit, nomes=(E.compart||[]).map(nomeU).filter(Boolean);
+  const quem = nomes.length ? 'Compartilhado entre <b>'+esc([E.autor].concat(nomes).join(', '))+'</b>' : 'Projeto individual — compartilhe para escrever junto com colegas';
+  const ult = E.editor && E.atualizado ? '<span class="ult">Última alteração salva por '+esc(E.editor)+' em '+dataHoraBr(E.atualizado)+'</span>' : '';
+  const bt = E.souAutor ? '<button type="button" class="btn sm" onclick="piCompartilhar()">👥 '+(nomes.length?'Gerenciar compartilhamento':'Compartilhar')+'</button>'
+                        : '<span class="mut sm">Você é coautor(a): pode editar e salvar. Só '+esc(E.autor)+' altera o compartilhamento e conclui.</span>';
+  return '<div class="comp no-print"><div class="who">'+quem+ult+'</div>'+bt+'</div>';
+}
+function piPintarComp(){ const b=$('#piComp'); if(b) b.innerHTML=piCompHTML(); }
+function piCompartilhar(){
+  const sel=S.edit.compart||[];
+  const pode=S.usuarios.filter(u=>u.id!==S.eu.id && u.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const PERF={preceptor:'Preceptor(a)',residente:'Residente',supervisor:'Supervisão',gestor:'Gestão',admin:'Administração',colaborador:'Colaborador(a)'};
+  abrirModal('<h2>Compartilhar projeto</h2><p class="sm">As pessoas escolhidas veem o projeto na lista delas, editam e salvam no mesmo documento. Todos veem o que os demais salvaram.</p>'+
+    '<input id="cBusca" placeholder="Buscar pelo nome" autocomplete="off">'+
+    '<div class="comp-lista" id="cLista">'+pode.map(u=>'<label data-n="'+esc((u.nome+' '+(u.categoria||'')).toLowerCase())+'"><input type="checkbox" value="'+u.id+'"'+(sel.indexOf(u.id)>-1?' checked':'')+'><span>'+esc(u.nome)+'<br><small>'+esc([PERF[u.perfil]||u.perfil,u.categoria].filter(Boolean).join(' · '))+'</small></span></label>').join('')+'</div>'+
+    '<div class="m-acoes"><button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="cOk">Salvar compartilhamento</button></div>');
+  $('#cBusca').oninput=e=>{ const q=e.target.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); $$('#cLista label').forEach(l=>{ l.style.display=l.dataset.n.normalize('NFD').replace(/[\u0300-\u036f]/g,'').indexOf(q)>-1?'':'none'; }); };
+  $('#cOk').onclick=()=>{ S.edit.compart=$$('#cLista input:checked').map(x=>x.value); fecharModal(); piPintarComp(); salvarReg('parcial'); };
+}
+/** A cada 60 s verifica se um(a) colega salvou o projeto enquanto ele está aberto. */
+function piVigiar(){
+  clearInterval(S.piTimer);
+  S.piTimer=setInterval(async()=>{
+    if(!$('#piComp') || !S.edit || S.edit.tipo!=='PI'){ clearInterval(S.piTimer); return; }
+    if(!S.edit.id || !(S.edit.compart||[]).length && S.edit.souAutor) return;
+    try{ const v=await rodar('api', S.token, 'versaoPI', {id:S.edit.id});
+      if(v && v.versao && v.versao!==S.edit.versao && v.editado_por!==S.eu.id){
+        $('#piNovo').innerHTML='<div class="comp-novo no-print"><span>'+esc(v.editor||'Um(a) colega')+' salvou alterações em '+dataHoraBr(v.atualizado_em)+'.</span><button type="button" class="btn sm" onclick="piAtualizar()">Trazer as alterações</button></div>';
+      } }catch(e){}
+  }, 60000);
+}
+/** Junta o que a colega salvou com o que esta pessoa ainda não salvou (campo a campo). */
+async function piAtualizar(conflito){
+  const meu=coletar().d.conteudo, base=S.edit.base||{};
+  let r; try{ r=await call('obter',{id:S.edit.id}); }catch(e){ return; }
+  const deles=r.conteudo||{}, junto=Object.assign({}, deles), ambos=[];
+  const igual=(a,b)=>JSON.stringify(a===undefined?'':a)===JSON.stringify(b===undefined?'':b);
+  Object.keys(Object.assign({}, meu, base)).forEach(k=>{
+    if(igual(meu[k], base[k])) return;                      // não mexi: fica o da colega
+    if(!igual(deles[k], base[k]) && !igual(deles[k], meu[k])) ambos.push(k);   // as duas mexeram: fica o meu
+    junto[k]=meu[k];
+  });
+  const etapa=S.edit.etapa; r.conteudo=junto; r.etapa=String(etapa);
+  await vEditar({tipo:'PI', id:S.edit.id, dados:r});
+  const rot=k=>{ const c=camposDe(FORMS.PI).find(x=>x.id===k); return c?c.label:k; };
+  if(ambos.length) toast('Alterações juntadas. Você e a outra pessoa mudaram: '+ambos.map(rot).join('; ')+'. Ficou o seu texto nesses campos; confira e salve.','err');
+  else toast('Alterações de '+(r.editor||'colega')+' trazidas. '+(Object.keys(meu).some(k=>!igual(meu[k],base[k]))?'Seu texto não salvo foi mantido. Salve para registrar.':''),'ok');
+}
+function piErroSalvar(e){
+  const m=msgErro(e);
+  if(m.indexOf('CONFLITO|')>-1){
+    const p=m.split('CONFLITO|')[1].split('|');
+    abrirModal('<h2>O projeto foi alterado</h2><p class="sm"><b>'+esc(p[0])+'</b> salvou alterações em '+dataHoraBr(p[1])+', depois que você abriu o projeto. Para não apagar o que foi escrito, junte as alterações antes de salvar: o seu texto não salvo é mantido.</p><div class="m-acoes"><button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" onclick="fecharModal();piAtualizar(true)">Juntar as alterações</button></div>');
+  } else toast(m,'err');
 }
 
 function excluirReg(id){
@@ -1737,7 +1810,9 @@ async function vDoc(p){
     (r.residente?'<div><span>'+(r.tipo==='SUPERVISAO'?'Preceptor(a)':'Residente')+'</span><b>'+esc(r.residente)+(resUser&&resUser.categoria?' · '+esc(resUser.categoria):'')+'</b></div>':'')+
     '<div><span>Data</span><b>'+dataBr(r.data)+(r.hora?' · '+esc(r.hora):'')+'</b></div>'+
     (C._semana?'<div><span>Semana epidemiológica</span><b>'+esc(C._semana)+'</b></div>':'')+
-    (r.tipo==='PI'?'<div><span>Preenchimento</span><b>'+r.progresso+'%</b></div>':'')+'</div>'+
+    (r.tipo==='PI'?'<div><span>Preenchimento</span><b>'+r.progresso+'%</b></div>':'')+
+    (r.tipo==='PI'&&(r.compartilhado||[]).length?'<div><span>Coautoria</span><b>'+esc((r.compartilhado_nomes||[]).join(', '))+'</b></div>':'')+
+    (r.tipo==='PI'&&r.editor?'<div><span>Última alteração</span><b>'+esc(r.editor)+(r.atualizado_em?' · '+dataHoraBr(r.atualizado_em):'')+'</b></div>':'')+'</div>'+
     corpo+ass+'</div><div class="barra-acoes no-print">'+bt+'</div>');
   carregarMiniaturas($('#view'));
 }
